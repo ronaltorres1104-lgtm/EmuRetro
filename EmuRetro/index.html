@@ -1,0 +1,1990 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>EmuRetro</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: barra de dispositivo arriba, selector desplegable, barra lateral de consolas + panel de detalle, y un reproductor fijo abajo; en móvil la barra lateral pasa a fichas horizontales. */
+:root {
+  --bg: #e6e6ea;
+  --surface: #f2f2f5;
+  --ink: #1c1b26;
+  --ink-soft: #5c5b6b;
+  --line: #c9c9d2;
+  --accent: #5b4b9a;
+  --accent-ink: #ffffff;
+  --btn-red: #c8372d;
+  --btn-green: #2f8a57;
+  --btn-yellow: #d49a1a;
+  --btn-blue: #2f6bb3;
+  --font-display: "Chakra Petch", "Arial Narrow", sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17171d;
+    --surface: #212129;
+    --ink: #ececf2;
+    --ink-soft: #a3a2b4;
+    --line: #34343f;
+    --accent: #a898e6;
+    --accent-ink: #17171d;
+    --btn-red: #e0584d;
+    --btn-green: #4cb27a;
+    --btn-yellow: #e6b445;
+    --btn-blue: #5b95d6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17171d;
+  --surface: #212129;
+  --ink: #ececf2;
+  --ink-soft: #a3a2b4;
+  --line: #34343f;
+  --accent: #a898e6;
+  --accent-ink: #17171d;
+  --btn-red: #e0584d;
+  --btn-green: #4cb27a;
+  --btn-yellow: #e6b445;
+  --btn-blue: #5b95d6;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-block: 24px 150px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button { font: inherit; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Cabecera */
+.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.pad {
+  display: grid; grid-template-columns: repeat(2, 12px); grid-template-rows: repeat(2, 12px); gap: 4px;
+  transform: rotate(-12deg); flex: none;
+}
+.pad i { border-radius: 50%; display: block; }
+.pad i:nth-child(1) { background: var(--btn-yellow); }
+.pad i:nth-child(2) { background: var(--btn-red); }
+.pad i:nth-child(3) { background: var(--btn-blue); }
+.pad i:nth-child(4) { background: var(--btn-green); }
+h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 5vw, 38px);
+  line-height: 1.05; margin: 0; letter-spacing: 0.01em; text-wrap: balance;
+}
+.sub { margin: 4px 0 0; color: var(--ink-soft); font-size: 14px; }
+.tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.search, .input, .select {
+  font: inherit; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; max-width: 100%;
+}
+.search { width: 220px; }
+.search::placeholder, .input::placeholder { color: var(--ink-soft); }
+.theme {
+  font-family: var(--font-mono); font-size: 12px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; cursor: pointer;
+}
+.theme:hover, .tab:hover, .btn:hover, .seg button:hover, .pbtn:hover, .qi:hover { border-color: var(--accent); }
+
+/* Botones */
+.btn {
+  color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 8px 14px; font-weight: 600; font-size: 14px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+}
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.1); }
+.btn.link { background: transparent; border-color: transparent; color: var(--accent); padding: 4px 0; text-decoration: underline; font-weight: 500; }
+.btn[disabled] { opacity: .55; cursor: progress; }
+
+/* Barra de dispositivo */
+.device {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px;
+  display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+}
+.device .info { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1 1 320px; }
+.device h2 { margin: 0; font-family: var(--font-display); font-size: 20px; font-weight: 600; line-height: 1.2; }
+.device p { margin: 0; color: var(--ink-soft); font-size: 14px; }
+.device .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.sumline { display: flex; gap: 8px 14px; flex-wrap: wrap; align-items: center; font-size: 14px; color: var(--ink-soft); }
+
+/* Selector */
+.picker { background: var(--surface); border: 1px solid var(--accent); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.picker-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.picker-head h2 { margin: 0; font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+.seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.seg button {
+  color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  padding: 7px 12px; font-size: 14px; font-weight: 500; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.pane { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.hint { margin: 0; color: var(--ink-soft); font-size: 13px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row .input { flex: 1 1 220px; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+.field .input, .field .select { width: 100%; }
+.field.wide { grid-column: 1 / -1; }
+.cand { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.cand h3 { margin: 0; font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+.warn { margin: 0; font-size: 13px; color: var(--ink-soft); border-left: 3px solid var(--btn-yellow); padding-left: 10px; }
+
+/* Estructura principal */
+.shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 20px; align-items: start; }
+.rail { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.group { display: flex; flex-direction: column; gap: 4px; }
+.group h2 {
+  font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-soft); margin: 0 0 2px; padding: 0 4px;
+}
+.tabs { display: flex; flex-direction: column; gap: 4px; }
+.tab {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left;
+  font-weight: 500; color: var(--ink); background: transparent;
+  border: 1px solid transparent; border-radius: 6px; padding: 8px 10px; cursor: pointer;
+}
+.tab .l { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tab .n {
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
+  background: var(--bg); border-radius: 4px; padding: 1px 6px; min-width: 22px; text-align: center;
+}
+.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.tab[aria-selected="true"] .n { background: transparent; color: var(--accent-ink); }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; background: var(--ink-soft); }
+.dot.ok { background: var(--btn-green); }
+.dot.lite { background: var(--btn-yellow); }
+.dot.no { background: var(--btn-red); }
+.tab[aria-selected="true"] .dot { box-shadow: 0 0 0 2px var(--accent-ink); }
+.none { color: var(--ink-soft); padding: 8px 4px; margin: 0; }
+
+/* Panel */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 22px; min-width: 0; }
+.panel-head { display: flex; flex-direction: column; gap: 10px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.panel-head h2 { font-family: var(--font-display); font-size: clamp(24px, 4vw, 32px); font-weight: 700; margin: 0; line-height: 1.1; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft);
+  border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 6px;
+}
+.chip.v { color: var(--ink); }
+.verdict { margin: 0; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.verdict span { color: var(--ink-soft); }
+.list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; padding-top: 18px; }
+
+/* Tarjeta de emulador */
+.card { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card h3 { margin: 0; font-family: var(--font-display); font-size: 19px; font-weight: 600; }
+.card p { margin: 0; color: var(--ink-soft); font-size: 14px; }
+.os { display: flex; flex-wrap: wrap; gap: 6px; }
+.dl {
+  margin-top: auto; align-self: flex-start; text-decoration: none; font-weight: 600; font-size: 14px;
+  color: var(--accent-ink); background: var(--accent); border-radius: 6px; padding: 8px 14px;
+}
+.dl:hover { filter: brightness(1.1); }
+
+/* Estado vacío */
+.empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding: 44px 16px 36px; }
+.slot {
+  width: 150px; max-width: 100%; height: 86px; border: 2px dashed var(--line); border-radius: 8px;
+  display: grid; place-items: center; position: relative;
+}
+.slot::before { content: ""; width: 96px; height: 10px; background: var(--line); border-radius: 3px; }
+.slot::after {
+  content: ""; position: absolute; left: 50%; top: -9px; width: 14px; height: 14px; background: var(--surface);
+  transform: translateX(-50%);
+}
+.empty h3 { font-family: var(--font-display); font-size: 20px; margin: 0; font-weight: 600; }
+.empty p { margin: 0; color: var(--ink-soft); max-width: 46ch; }
+
+/* Descargas */
+.notice { margin: 14px 0 0; font-size: 13px; color: var(--ink-soft); border-left: 3px solid var(--accent); padding-left: 10px; }
+.card.dim { opacity: .62; }
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge { font-family: var(--font-mono); font-size: 11px; border-radius: 4px; padding: 1px 7px; border: 1px solid var(--line); color: var(--ink-soft); }
+.badge.good { color: var(--btn-green); border-color: var(--btn-green); }
+.badge.warn { color: var(--btn-yellow); border-color: var(--btn-yellow); }
+.badge.bad { color: var(--btn-red); border-color: var(--btn-red); }
+.badge.mine { color: var(--accent); border-color: var(--accent); }
+.osrows { display: flex; flex-direction: column; gap: 10px; }
+.osrow { display: flex; flex-direction: column; gap: 6px; }
+.osrow > .chip { align-self: flex-start; }
+.osrow.me > .chip { color: var(--ink); border-color: var(--accent); }
+.acts2 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.acts2 .dl {
+  margin: 0; align-self: auto; display: inline-flex; flex-direction: column; line-height: 1.25;
+  max-width: 100%; min-width: 0;
+}
+.acts2 .dl small { font-weight: 400; font-size: 11px; overflow-wrap: anywhere; }
+.acts2 .btn { padding: 6px 12px; }
+.vtl { font-size: 12px; color: var(--ink-soft); text-decoration: underline; }
+.vtl:hover { color: var(--accent); }
+.card-foot { margin-top: auto; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+.card-foot a:not(.btn) { color: var(--accent); }
+.foot-row { padding-top: 16px; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+.check input { margin-top: 4px; accent-color: var(--accent); }
+.btn[aria-disabled="true"] { opacity: .5; pointer-events: none; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.url { overflow-wrap: anywhere; }
+.review-list { display: flex; flex-direction: column; gap: 12px; }
+
+/* Reproductor */
+.player {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface);
+  border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgba(0, 0, 0, .14);
+  padding-top: 8px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.player-in { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+.pinfo { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-width: 0; }
+.ptitle { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.psub { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
+.prog { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--accent); }
+.ctrl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pbtn {
+  width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  display: grid; place-items: center; cursor: pointer; flex: none;
+}
+.vol { display: flex; align-items: center; gap: 6px; color: var(--ink-soft); flex: 1 1 110px; min-width: 100px; }
+.vol input { width: 100%; max-width: 160px; accent-color: var(--accent); }
+.queue {
+  display: flex; flex-direction: column; gap: 8px; max-height: min(52vh, 400px);
+  border-bottom: 1px solid var(--line); padding-bottom: 8px;
+}
+.queue-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.queue-head h2 { margin: 0; font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.queue ol { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.queue li { display: flex; gap: 4px; align-items: stretch; }
+.qi {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; cursor: pointer;
+}
+.qi[aria-current="true"] { border-color: var(--accent); }
+.qi[aria-current="true"] .qt { font-weight: 600; color: var(--accent); }
+.qn { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); min-width: 20px; }
+.qt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qd { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); }
+.qx { color: var(--ink-soft); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; cursor: pointer; }
+.qx:hover { border-color: var(--btn-red); color: var(--ink); }
+.mine { font-family: var(--font-mono); font-size: 10px; color: var(--accent); border: 1px solid var(--accent); border-radius: 3px; padding: 0 4px; }
+
+@media (max-width: 760px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail { flex-direction: row; overflow-x: auto; gap: 8px; padding-bottom: 6px; }
+  .group { flex-direction: row; align-items: center; gap: 6px; flex: none; }
+  .group h2 { display: none; }
+  .tabs { flex-direction: row; gap: 6px; }
+  .tab { white-space: nowrap; border-color: var(--line); background: var(--surface); }
+  .tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); }
+  .search { width: 100%; }
+  .tools { width: 100%; }
+  .panel { padding: 16px; }
+  .device { padding: 14px; }
+  .psub { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .panel { animation: in .18s ease-out; }
+  @keyframes in { from { opacity: .4; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="pad" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div>
+        <h1>EmuRetro</h1>
+        <p class="sub" id="sub"></p>
+      </div>
+    </div>
+    <div class="tools">
+      <input class="search" id="search" type="search" placeholder="Buscar consola" aria-label="Buscar consola">
+      <button class="theme" id="review-open" type="button" hidden>Envíos pendientes (0)</button>
+      <button class="theme" id="add-open" type="button">Agregar emulador</button>
+      <button class="theme" id="theme" type="button">Tema: auto</button>
+    </div>
+  </header>
+
+  <section class="device" id="device" aria-label="Tu dispositivo"></section>
+
+  <section class="picker" id="picker" hidden aria-label="Elegir dispositivo">
+    <div class="picker-head">
+      <h2>Elige tu dispositivo</h2>
+      <button class="btn" id="close-picker" type="button">Cerrar</button>
+    </div>
+    <div class="seg" id="modes">
+      <button type="button" data-mode="claude" aria-pressed="true">Preguntarle a una IA</button>
+      <button type="button" data-mode="detect" aria-pressed="false">Detectar este equipo</button>
+      <button type="button" data-mode="manual" aria-pressed="false">Manual</button>
+    </div>
+
+    <div class="pane" id="pane-claude">
+      <div class="row">
+        <input class="input" id="c-name" type="text" placeholder="Escribe el modelo, por ejemplo ZTE Blade A54" aria-label="Modelo del dispositivo">
+        <button class="btn primary" id="c-go" type="button">Buscar con una IA</button>
+      </div>
+      <a class="btn link" id="c-web" href="#" target="_blank" rel="noopener" hidden>Ver sus especificaciones en internet</a>
+      <p class="hint">Esta página no puede navegar por internet. Una IA estima las especificaciones con lo que sabe y puede fallar con equipos nuevos o poco comunes. Si no lo reconoce, abre el enlace, copia el procesador y escríbelo en Manual. La primera vez te pedirá permiso.</p>
+      <div id="c-out" aria-live="polite"></div>
+    </div>
+
+    <div class="pane" id="pane-detect" hidden>
+      <p class="hint">Lee lo que tu navegador permite ver: núcleos del procesador, memoria aproximada, pantalla, sistema y tarjeta gráfica. En muchos equipos no muestra el modelo exacto, así que es una estimación.</p>
+      <div class="row"><button class="btn primary" id="detect-btn" type="button">Detectar este equipo</button></div>
+      <div id="detect-out"></div>
+    </div>
+
+    <div class="pane" id="pane-manual" hidden>
+      <div class="fields">
+        <div class="field"><label for="m-name">Nombre (opcional)</label><input class="input" id="m-name" type="text" placeholder="Mi celular"></div>
+        <div class="field"><label for="m-type">Tipo</label>
+          <select class="select" id="m-type">
+            <option value="celular">Celular o tablet</option>
+            <option value="portatil">Consola portátil</option>
+            <option value="pc">PC o laptop</option>
+            <option value="consola">Consola de sobremesa</option>
+          </select></div>
+        <div class="field wide"><label for="m-soc">Procesador específico (opcional)</label>
+          <input class="input" id="m-soc" type="text" placeholder="Por ejemplo: Snapdragon 680, Helio G85, Unisoc T606, Dimensity 1080" autocomplete="off"></div>
+        <div class="field"><label for="m-ram">Memoria RAM</label>
+          <select class="select" id="m-ram">
+            <option value="1">1 GB</option><option value="2">2 GB</option><option value="3">3 GB</option>
+            <option value="4" selected>4 GB</option><option value="6">6 GB</option><option value="8">8 GB</option>
+            <option value="12">12 GB</option><option value="16">16 GB o más</option>
+          </select></div>
+        <div class="field"><label for="m-tier">Gama del procesador</label><select class="select" id="m-tier"></select></div>
+        <div class="field"><label for="m-screens">Pantallas</label>
+          <select class="select" id="m-screens">
+            <option value="1">Una pantalla</option>
+            <option value="2">Dos pantallas (física o plegable)</option>
+          </select></div>
+      </div>
+      <p class="hint" id="m-hint"></p>
+      <div class="row">
+        <button class="btn primary" id="m-save" type="button">Usar este dispositivo</button>
+        <button class="btn link" id="m-ai" type="button" hidden>Preguntarle a una IA por este procesador</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="picker" id="addbox" hidden aria-label="Agregar un emulador">
+    <div class="picker-head">
+      <h2>Agregar un emulador</h2>
+      <button class="btn" id="add-close" type="button">Cerrar</button>
+    </div>
+    <p class="hint" id="add-mode"></p>
+    <div class="fields">
+      <div class="field"><label for="a-name">Nombre</label><input class="input" id="a-name" type="text" maxlength="60" placeholder="Por ejemplo: Mesen"></div>
+      <div class="field"><label for="a-console">Consola</label><select class="select" id="a-console"></select></div>
+      <div class="field"><label for="a-os">Sistema</label>
+        <select class="select" id="a-os">
+          <option value="Android">Android</option><option value="Windows">Windows</option>
+          <option value="Linux">Linux</option><option value="macOS">macOS</option>
+        </select></div>
+      <div class="field"><label for="a-ver">Versión (opcional)</label><input class="input" id="a-ver" type="text" maxlength="30" placeholder="1.0"></div>
+      <div class="field wide"><label for="a-url">Enlace de descarga directa</label><input class="input" id="a-url" type="url" inputmode="url" placeholder="https://github.com/usuario/proyecto/releases/download/v1.0/archivo.zip" autocomplete="off"></div>
+      <div class="field wide"><label for="a-site">Sitio oficial (opcional)</label><input class="input" id="a-site" type="url" inputmode="url" placeholder="https://" autocomplete="off"></div>
+      <div class="field wide"><label for="a-note">Nota (opcional)</label><input class="input" id="a-note" type="text" maxlength="200" placeholder="Qué consolas emula o qué necesita"></div>
+    </div>
+    <div class="cand">
+      <h3>Revisión de seguridad con VirusTotal</h3>
+      <p class="hint">VirusTotal analiza el enlace con decenas de antivirus. Esta página no puede lanzar el análisis por ti, porque VirusTotal exige una clave privada que no se puede guardar en una página. Ábrelo desde aquí, mira el resultado y confírmalo abajo.</p>
+      <div class="row">
+        <a class="btn" id="vt-url" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">1. Revisar el enlace en VirusTotal</a>
+        <a class="btn link" href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener noreferrer">Subir el archivo ya descargado</a>
+      </div>
+      <label class="check"><input type="checkbox" id="add-ok" disabled><span>2. Revisé el resultado y ningún antivirus marca el enlace como peligroso.</span></label>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="add-save" type="button" disabled>3. Agregar a la lista</button>
+      <span class="hint" id="add-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section class="picker" id="review" hidden aria-label="Envíos pendientes">
+    <div class="picker-head">
+      <h2 id="review-title">Envíos pendientes</h2>
+      <button class="btn" id="review-close" type="button">Cerrar</button>
+    </div>
+    <div class="review-list" id="review-list"></div>
+  </section>
+
+  <div class="shell">
+    <nav class="rail" id="rail" aria-label="Consolas"></nav>
+    <main class="panel" id="panel" role="tabpanel" aria-live="polite"></main>
+  </div>
+</div>
+
+<div class="player" id="player" role="region" aria-label="Música">
+  <div class="player-in">
+    <div class="queue" id="queue" hidden>
+      <div class="queue-head">
+        <h2 id="q-title">Cola de reproducción</h2>
+        <div class="row">
+          <label class="btn" for="q-file">Agregar música</label>
+          <input type="file" id="q-file" class="sr" accept="audio/*,.opus,.ogg,.mp3,.m4a,.aac,.wav,.flac" multiple>
+          <button class="btn" id="q-close" type="button">Cerrar</button>
+        </div>
+      </div>
+      <p class="hint">Las canciones que agregues solo duran mientras esta página esté abierta.</p>
+      <ol id="q-list"></ol>
+    </div>
+    <div class="pinfo"><span class="ptitle" id="p-title"></span><span class="psub" id="p-sub"></span></div>
+    <div class="prog" aria-hidden="true"><i id="p-prog"></i></div>
+    <div class="ctrl">
+      <button class="btn primary" id="p-toggle" type="button" aria-pressed="false"></button>
+      <button class="pbtn" id="p-prev" type="button" aria-label="Canción anterior" title="Anterior">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M6 6h2v12H6zm3.5 6L18 18V6z"/></svg>
+      </button>
+      <button class="pbtn" id="p-next" type="button" aria-label="Canción siguiente" title="Siguiente">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>
+      </button>
+      <label class="vol" title="Volumen">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M3 10v4h4l5 4V6L7 10zm13.5 2a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
+        <span class="sr">Volumen</span>
+        <input type="range" id="p-vol" min="0" max="1" step="0.05" value="0.5">
+      </label>
+      <button class="btn" id="p-queue" type="button" aria-expanded="false">Cola</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/*
+  Los emuladores están en la lista EMUS, más abajo. Cada uno indica a qué consolas pertenece.
+
+  smooth = gama mínima (1 a 5) para que la consola vaya bien con emuladores normales.
+  lite   = gama mínima para que funcione solo con emuladores muy optimizados (null si no aplica).
+*/
+var CONSOLES = [
+  { id: "nes", name: "NES", maker: "Nintendo", year: 1983, type: "Sobremesa", smooth: 1, lite: null, emulators: [] },
+  { id: "snes", name: "Super Nintendo", maker: "Nintendo", year: 1990, type: "Sobremesa", smooth: 1, lite: null, emulators: [] },
+  { id: "n64", name: "Nintendo 64", maker: "Nintendo", year: 1996, type: "Sobremesa", smooth: 2, lite: 1, liteNote: "Solo con emuladores optimizados y juegos livianos.", emulators: [] },
+  { id: "gamecube", name: "GameCube", maker: "Nintendo", year: 2001, type: "Sobremesa", smooth: 3, lite: 2, emulators: [] },
+  { id: "wii", name: "Wii", maker: "Nintendo", year: 2006, type: "Sobremesa", smooth: 3, lite: 2, emulators: [] },
+  { id: "wiiu", name: "Wii U", maker: "Nintendo", year: 2012, type: "Sobremesa", smooth: 5, lite: 4, emulators: [] },
+  { id: "switch", name: "Switch", maker: "Nintendo", year: 2017, type: "Híbrida", smooth: 5, lite: 4, emulators: [] },
+  { id: "gb", name: "Game Boy / Color", maker: "Nintendo", year: 1989, type: "Portátil", smooth: 1, lite: null, emulators: [] },
+  { id: "gba", name: "Game Boy Advance", maker: "Nintendo", year: 2001, type: "Portátil", smooth: 1, lite: null, emulators: [] },
+  { id: "nds", name: "Nintendo DS", maker: "Nintendo", year: 2004, type: "Portátil", smooth: 2, lite: 1, dual: true, liteNote: "Solo con emuladores muy optimizados, como DraStic.", emulators: [] },
+  { id: "3ds", name: "Nintendo 3DS", maker: "Nintendo", year: 2011, type: "Portátil", smooth: 3, lite: 2, dual: true, emulators: [] },
+  { id: "ps1", name: "PlayStation", maker: "Sony", year: 1994, type: "Sobremesa", smooth: 1, lite: null, emulators: [] },
+  { id: "ps2", name: "PlayStation 2", maker: "Sony", year: 2000, type: "Sobremesa", smooth: 3, lite: 2, emulators: [] },
+  { id: "ps3", name: "PlayStation 3", maker: "Sony", year: 2006, type: "Sobremesa", smooth: 5, lite: null, emulators: [] },
+  { id: "psp", name: "PSP", maker: "Sony", year: 2004, type: "Portátil", smooth: 2, lite: null, emulators: [] },
+  { id: "vita", name: "PS Vita", maker: "Sony", year: 2011, type: "Portátil", smooth: 4, lite: 3, emulators: [] },
+  { id: "xbox", name: "Xbox", maker: "Microsoft", year: 2001, type: "Sobremesa", smooth: 4, lite: 3, emulators: [] },
+  { id: "x360", name: "Xbox 360", maker: "Microsoft", year: 2005, type: "Sobremesa", smooth: 5, lite: null, emulators: [] },
+  { id: "genesis", name: "Mega Drive / Genesis", maker: "Sega", year: 1988, type: "Sobremesa", smooth: 1, lite: null, emulators: [] },
+  { id: "saturn", name: "Saturn", maker: "Sega", year: 1994, type: "Sobremesa", smooth: 2, lite: null, emulators: [] },
+  { id: "dreamcast", name: "Dreamcast", maker: "Sega", year: 1998, type: "Sobremesa", smooth: 2, lite: null, emulators: [] },
+  { id: "gamegear", name: "Game Gear", maker: "Sega", year: 1990, type: "Portátil", smooth: 1, lite: null, emulators: [] },
+  { id: "atari2600", name: "Atari 2600", maker: "Atari", year: 1977, type: "Sobremesa", smooth: 1, lite: null, emulators: [] }
+];
+
+/* Consolas y categorías extra */
+CONSOLES.push(
+  { id: "ps4", name: "PlayStation 4", maker: "Sony", year: 2013, type: "Sobremesa", smooth: 5, lite: null, pcOnly: true, emulators: [] },
+  { id: "arcade", name: "Arcade (MAME)", maker: "Arcade", year: 1997, type: "Arcade", smooth: 2, lite: 1, liteNote: "Solo con juegos arcade sencillos.", emulators: [] },
+  { id: "multi", name: "Multi-consola", maker: "Herramientas", type: "Todo en uno", tool: true, smooth: 1, lite: null, emulators: [] },
+  { id: "frontends", name: "Front-ends", maker: "Front-ends y scrapers", type: "Lanzadores", tool: true, smooth: 1, lite: null, emulators: [] },
+  { id: "scrapers", name: "Scrapers y arte", maker: "Front-ends y scrapers", type: "Servicios web", tool: true, smooth: 1, lite: null, emulators: [] },
+  { id: "winlator", name: "Juegos de PC en Android", maker: "Herramientas", type: "Capas de compatibilidad", tool: true, smooth: 4, lite: 3, liteNote: "Solo juegos de PC muy livianos.", emulators: [] },
+  { id: "androidpc", name: "Android en PC", maker: "Herramientas", type: "Emuladores de Android", tool: true, smooth: 3, lite: null, pcOnly: true, emulators: [] }
+);
+
+/*
+  Lista de emuladores. E(id, nombre, consolas, opciones, descargas)
+  descargas: [sistema, nombre del archivo, tamaño, enlace directo, enlace de Google Play]
+  light: true = optimizado para equipos de gama baja.
+  Enlaces tomados de las páginas oficiales el 22 de octubre de 2026; pueden cambiar con cada versión nueva.
+*/
+function E(id, name, cons, o, dls) {
+  o = o || {};
+  return {
+    id: id, name: name, consoles: cons, v: o.v || "", light: !!o.light, status: o.status || "",
+    official: o.official || "", notes: o.notes || "",
+    downloads: (dls || []).map(function (x) { return { os: x[0], label: x[1], size: x[2] || "", direct: x[3] || "", store: x[4] || "" }; })
+  };
+}
+var GH = "https://github.com/";
+var EDEN = "https://stable.eden-emu.dev/v0.2.1/";
+var CMJ = GH + "weihuoya/citra/releases/download/20251112/";
+var EMUS = [
+  /* Multi-consola */
+  E("retroarch", "RetroArch", ["multi", "nes", "snes", "gb", "gba", "n64", "genesis", "ps1", "saturn", "arcade"],
+    { v: "1.22.2", official: "https://www.retroarch.com", notes: "Un solo programa con núcleos para decenas de consolas. Los núcleos se bajan desde la propia app." }, [
+    ["Android", "RetroArch.apk (universal)", "194 MB", "https://buildbot.libretro.com/stable/1.22.2/android/RetroArch.apk", "https://play.google.com/store/apps/details?id=com.retroarch"],
+    ["Android", "RetroArch_aarch64.apk (solo ARM64)", "180 MB", "https://buildbot.libretro.com/stable/1.22.2/android/RetroArch_aarch64.apk"],
+    ["Windows", "RetroArch.7z (portable x64)", "198 MB", "https://buildbot.libretro.com/stable/1.22.2/windows/x86_64/RetroArch.7z"],
+    ["Windows", "RetroArch-Win64-setup.exe (instalador)", "204 MB", "https://buildbot.libretro.com/stable/1.22.2/windows/x86_64/RetroArch-Win64-setup.exe"]
+  ]),
+
+  /* Nintendo */
+  E("mesen2", "Mesen", ["nes"], { v: "2.1.1", official: GH + "SourMesen/Mesen2", notes: "Emulador de NES muy preciso para PC." }, [
+    ["Windows", "Mesen_2.1.1_Windows.zip", "32.5 MB", GH + "SourMesen/Mesen2/releases/download/2.1.1/Mesen_2.1.1_Windows.zip"],
+    ["Linux", "Mesen_2.1.1_Linux_x64.zip", "37.7 MB", GH + "SourMesen/Mesen2/releases/download/2.1.1/Mesen_2.1.1_Linux_x64.zip"],
+    ["macOS", "Mesen_2.1.1_macOS_ARM64_AppleSilicon.zip", "73.3 MB", GH + "SourMesen/Mesen2/releases/download/2.1.1/Mesen_2.1.1_macOS_ARM64_AppleSilicon.zip"],
+    ["macOS", "Mesen_2.1.1_macOS_x64_Intel.zip", "76.3 MB", GH + "SourMesen/Mesen2/releases/download/2.1.1/Mesen_2.1.1_macOS_x64_Intel.zip"]
+  ]),
+  E("nes-emu", "NES.emu", ["nes"], { v: "nightly", light: true, official: GH + "Rakashazi/emu-ex-plus-alpha", notes: "Compilación nocturna en .zip (contiene el APK). La versión estable está en Google Play." }, [
+    ["Android", "NesEmu.zip (contiene el APK)", "5.1 MB", GH + "Rakashazi/emu-ex-plus-alpha/releases/download/Pre-release/NesEmu.zip"]
+  ]),
+  E("snes9x", "Snes9x", ["snes"], { v: "1.63", official: GH + "snes9xgit/snes9x" }, [
+    ["Windows", "snes9x-1.63-win32-x64.zip", "5.1 MB", GH + "snes9xgit/snes9x/releases/download/1.63/snes9x-1.63-win32-x64.zip"],
+    ["Linux", "Snes9x-1.63-x86_64.AppImage", "15.9 MB", GH + "snes9xgit/snes9x/releases/download/1.63/Snes9x-1.63-x86_64.AppImage"],
+    ["macOS", "Snes9x-1.63-Mac.zip", "3.2 MB", GH + "snes9xgit/snes9x/releases/download/1.63/Snes9x-1.63-Mac.zip"]
+  ]),
+  E("snes9x-ex-plus", "Snes9x EX+", ["snes"], { v: "nightly", light: true, official: GH + "Rakashazi/emu-ex-plus-alpha", notes: "Compilación nocturna en .zip (contiene el APK). La versión estable está en Google Play." }, [
+    ["Android", "Snes9xEXPlus.zip (contiene el APK)", "5.6 MB", GH + "Rakashazi/emu-ex-plus-alpha/releases/download/Pre-release/Snes9xEXPlus.zip"]
+  ]),
+  E("simple64", "Simple64", ["n64"], { v: "2024.12.1", status: "abandonado", official: GH + "simple64/simple64", notes: "Repositorio archivado desde febrero de 2025. Esta es su última versión." }, [
+    ["Windows", "simple64-win64-b49e10e.zip", "46.5 MB", GH + "simple64/simple64/releases/download/v2024.12.1/simple64-win64-b49e10e.zip"]
+  ]),
+  E("ares", "Ares", ["n64"], { v: "v148", official: "https://ares-emulator.github.io", notes: "Esta versión no trae build de Linux." }, [
+    ["Windows", "ares-windows-x64.zip", "61.8 MB", GH + "ares-emulator/ares/releases/download/v148/ares-windows-x64.zip"],
+    ["macOS", "ares-macos-universal.zip", "76.2 MB", GH + "ares-emulator/ares/releases/download/v148/ares-macos-universal.zip"]
+  ]),
+  E("project64", "Project64", ["n64"], { v: "3.0.1", official: "https://www.pj64-emu.com", notes: "Instalador para Windows tomado de la página oficial." }, [
+    ["Windows", "project64-3-0-1-installer", "", "https://www.pj64-emu.com/download/project64-3-0-1-installer"]
+  ]),
+  E("mupen64plus-fz", "Mupen64Plus FZ", ["n64"], { light: true, status: "no-verificado", official: "https://www.mupen64plus.org", notes: "No encontré una página oficial con APK. Búscalo en Google Play." }, [
+    ["Android", "Buscar en Google Play", "", "", "https://play.google.com/store/search?q=Mupen64Plus%20FZ&c=apps"]
+  ]),
+  E("vba-m", "VisualBoyAdvance-M", ["gb", "gba"], { v: "2.2.3", official: GH + "visualboyadvance-m/visualboyadvance-m", notes: "Esta versión no trae binario de Linux." }, [
+    ["Windows", "visualboyadvance-m-Win-x86_64.zip", "16 MB", GH + "visualboyadvance-m/visualboyadvance-m/releases/download/v2.2.3/visualboyadvance-m-Win-x86_64.zip"],
+    ["macOS", "visualboyadvance-m-Mac-ARM64.zip", "18.7 MB", GH + "visualboyadvance-m/visualboyadvance-m/releases/download/v2.2.3/visualboyadvance-m-Mac-ARM64.zip"],
+    ["macOS", "visualboyadvance-m-Mac-x86_64.zip", "20.5 MB", GH + "visualboyadvance-m/visualboyadvance-m/releases/download/v2.2.3/visualboyadvance-m-Mac-x86_64.zip"]
+  ]),
+  E("pizza-boy-gbc", "Pizza Boy C (GBC)", ["gb"], { light: true, status: "", official: "https://play.google.com/store/apps/developer?id=Pizza+Emulators", notes: "Solo se distribuye por Google Play." }, [
+    ["Android", "Google Play", "", "", "https://play.google.com/store/apps/details?id=it.dbtecno.pizzaboy"]
+  ]),
+  E("pizza-boy-a", "Pizza Boy A (GBA)", ["gba"], { light: true, official: "https://play.google.com/store/apps/developer?id=Pizza+Emulators", notes: "Solo se distribuye por Google Play." }, [
+    ["Android", "Google Play", "", "", "https://play.google.com/store/apps/details?id=it.dbtecno.pizzaboygba"]
+  ]),
+  E("gba-emu", "GBA.emu", ["gba"], { v: "nightly", light: true, official: GH + "Rakashazi/emu-ex-plus-alpha", notes: "Compilación nocturna en .zip (contiene el APK). La versión estable está en Google Play." }, [
+    ["Android", "GbaEmu.zip (contiene el APK)", "4.8 MB", GH + "Rakashazi/emu-ex-plus-alpha/releases/download/Pre-release/GbaEmu.zip"]
+  ]),
+  E("dolphin", "Dolphin", ["gamecube", "wii"], { v: "2609-104 (desarrollo)", official: "https://dolphin-emu.org/download/", notes: "Compilación de desarrollo más reciente. Estos enlaces cambian con cada versión nueva; si uno falla, usa el sitio oficial." }, [
+    ["Windows", "dolphin-master-2609-104-x64.7z", "", "https://dl.dolphin-emu.org/builds/d8/2c/dolphin-master-2609-104-x64.7z"],
+    ["Windows", "dolphin-master-2609-104-arm64.7z", "", "https://dl.dolphin-emu.org/builds/a7/68/dolphin-master-2609-104-arm64.7z"],
+    ["macOS", "dolphin-master-2609-104-universal.dmg", "", "https://dl.dolphin-emu.org/builds/14/38/dolphin-master-2609-104-universal.dmg"],
+    ["Android", "dolphin-master-2609-104.apk", "", "https://dl.dolphin-emu.org/builds/5c/b0/dolphin-master-2609-104.apk"]
+  ]),
+  E("cemu", "Cemu", ["wiiu"], { v: "2.6", official: "https://cemu.info" }, [
+    ["Windows", "cemu-2.6-windows-x64.zip", "25.2 MB", GH + "cemu-project/Cemu/releases/download/v2.6/cemu-2.6-windows-x64.zip"],
+    ["Linux", "Cemu-2.6-x86_64.AppImage", "58.6 MB", GH + "cemu-project/Cemu/releases/download/v2.6/Cemu-2.6-x86_64.AppImage"],
+    ["macOS", "cemu-2.6-macos-12-x64.dmg", "34.9 MB", GH + "cemu-project/Cemu/releases/download/v2.6/cemu-2.6-macos-12-x64.dmg"]
+  ]),
+  E("ryujinx", "Ryujinx", ["switch"], { status: "abandonado", official: "https://ryujinx.org", notes: "Se descontinuó el 1 de octubre de 2024 y no vi una descarga oficial." }, []),
+  E("ryubing", "Ryubing", ["switch"], { status: "no-verificado", official: "https://ryujinx.app", notes: "Continuación comunitaria de Ryujinx. No pude ver su página de descargas; compruébala en su sitio." }, []),
+  E("sudachi", "Sudachi", ["switch"], { v: "1.0.15", official: "https://sudachiemu.org" }, [
+    ["Android", "sudachiemu.org-apk.zip", "", "https://download.sudachiemu.org/sudachiemu.org-apk.zip"],
+    ["Windows", "sudachiemu.org-winpc-1-0-15.zip", "", "https://download.sudachiemu.org/sudachiemu.org-winpc-1-0-15.zip"],
+    ["Linux", "sudachiemu.org-linux-v1.0.14.zip", "", "https://download.sudachiemu.org/sudachiemu.org-linux-v1.0.14.zip"]
+  ]),
+  E("eden", "Eden", ["switch"], { v: "0.2.1", official: "https://eden-emu.dev/downloads/", notes: "Emulador de Switch de código abierto. Hay más variantes en su página de descargas." }, [
+    ["Android", "Eden-Android-v0.2.1-standard.apk", "", EDEN + "Eden-Android-v0.2.1-standard.apk"],
+    ["Android", "Eden-Android-v0.2.1-legacy.apk (equipos viejos)", "", EDEN + "Eden-Android-v0.2.1-legacy.apk"],
+    ["Windows", "Eden-Windows-v0.2.1-amd64-clang-pgo.zip", "", EDEN + "Eden-Windows-v0.2.1-amd64-clang-pgo.zip"],
+    ["Windows", "Eden-Windows-v0.2.1-amd64-msvc-standard.zip", "", EDEN + "Eden-Windows-v0.2.1-amd64-msvc-standard.zip"],
+    ["Windows", "Eden-Windows-v0.2.1-rog-ally-clang-pgo.zip (ROG Ally)", "", EDEN + "Eden-Windows-v0.2.1-rog-ally-clang-pgo.zip"],
+    ["Linux", "Eden-Linux-v0.2.1-amd64-clang-pgo.AppImage", "", EDEN + "Eden-Linux-v0.2.1-amd64-clang-pgo.AppImage"],
+    ["Linux", "Eden-Linux-v0.2.1-steamdeck-clang-pgo.AppImage (Steam Deck)", "", EDEN + "Eden-Linux-v0.2.1-steamdeck-clang-pgo.AppImage"],
+    ["Linux", "Eden-Linux-v0.2.1-aarch64-clang-pgo.AppImage (ARM)", "", EDEN + "Eden-Linux-v0.2.1-aarch64-clang-pgo.AppImage"],
+    ["macOS", "Eden-macOS-v0.2.1.dmg", "", EDEN + "Eden-macOS-v0.2.1.dmg"]
+  ]),
+  E("citra-mmj", "Citra MMJ (weihuoya)", ["3ds"], { v: "20251112", official: GH + "weihuoya/citra/releases", notes: "Para Android. Las variantes «Antutu» y «StorageAccess» cambian cómo se identifica el equipo y cómo accede a los archivos; si dudas, usa la primera." }, [
+    ["Android", "Citra_MMJ_20251112.apk", "11.6 MB", CMJ + "Citra_MMJ_20251112.apk"],
+    ["Android", "Citra_MMJ_20251112_Antutu.apk", "11.6 MB", CMJ + "Citra_MMJ_20251112_Antutu.apk"],
+    ["Android", "Citra_MMJ_20251112_StorageAccess.apk", "11.6 MB", CMJ + "Citra_MMJ_20251112_StorageAccess.apk"],
+    ["Android", "Citra_MMJ_20251112_StorageAccess_Antutu.apk", "11.6 MB", CMJ + "Citra_MMJ_20251112_StorageAccess_Antutu.apk"]
+  ]),
+  E("dolphin-mmjr2", "Dolphin MMJR2", ["gamecube", "wii"], { v: "U24.07.02-2407", official: GH + "Medard22/Dolphin-MMJR2-VBI/releases", notes: "Para Android. La versión es de mediados de 2024; mira la página de releases por si hay una más nueva." }, [
+    ["Android", "Dolphin.MMJR2-VBI-U24.07.02-2407.apk", "12.4 MB", GH + "Medard22/Dolphin-MMJR2-VBI/releases/download/U24.07.02-2407/Dolphin.MMJR2-VBI-U24.07.02-2407.apk"]
+  ]),
+  E("watermelonds", "WatermelonDS", ["nds"], { v: "0.8.0.rc3", official: GH + "SapphireRhodonite/WatermelonDS", notes: "Fork de melonDS Android con mejor soporte de doble pantalla." }, [
+    ["Android", "WatermelonDS-0.8.0.rc3.apk", "26.7 MB", GH + "SapphireRhodonite/WatermelonDS/releases/download/0.8.0.rc3/WatermelonDS-0.8.0.rc3.apk"]
+  ]),
+  E("seedlessds", "SeedlessDS", ["nds"], { v: "1.0.1", light: true, official: GH + "SapphireRhodonite/SeedlessDS", notes: "Basado en DraStic. Consume poco y rinde bien en equipos modestos." }, [
+    ["Android", "SeedlessDS-1.0.1-release.apk", "14.8 MB", GH + "SapphireRhodonite/SeedlessDS/releases/download/1.0.1/SeedlessDS-1.0.1-release.apk"]
+  ]),
+  E("drastic-ds", "DraStic DS", ["nds"], { light: true, official: "https://play.google.com/store/apps/details?id=com.dsemu.drastic", notes: "La prensa informó que se retiró de Google Play en febrero de 2025. Puede no estar disponible." }, [
+    ["Android", "Google Play", "", "", "https://play.google.com/store/apps/details?id=com.dsemu.drastic"]
+  ]),
+  E("melonds", "melonDS", ["nds"], { v: "1.1", official: "https://melonds.kuribo64.net", notes: "Renderizado OpenGL, multijugador y pantallas independientes." }, [
+    ["Windows", "melonDS-1.1-windows-x86_64.zip", "18.6 MB", GH + "melonDS-emu/melonDS/releases/download/1.1/melonDS-1.1-windows-x86_64.zip"],
+    ["Linux", "melonDS-1.1-appimage-x86_64.zip", "32.7 MB", GH + "melonDS-emu/melonDS/releases/download/1.1/melonDS-1.1-appimage-x86_64.zip"],
+    ["macOS", "melonDS-1.1-macOS-universal.zip", "23.2 MB", GH + "melonDS-emu/melonDS/releases/download/1.1/melonDS-1.1-macOS-universal.zip"]
+  ]),
+  E("melonds-android", "melonDS Android", ["nds"], { v: "2.0.1", official: GH + "rafaelvcaetano/melonDS-android" }, [
+    ["Android", "app-gitHub-prod-release.apk", "20.1 MB", GH + "rafaelvcaetano/melonDS-android/releases/download/2.0.1/app-gitHub-prod-release.apk"]
+  ]),
+  E("desmume", "DeSmuME", ["nds"], { v: "0.9.13", official: "https://desmume.org", notes: "Última versión de 2022. Linux solo trae código fuente." }, [
+    ["Windows", "desmume-0.9.13-win64.zip", "6.1 MB", GH + "TASEmulators/desmume/releases/download/release_0_9_13/desmume-0.9.13-win64.zip"],
+    ["macOS", "desmume-0.9.13-macOS.dmg", "15 MB", GH + "TASEmulators/desmume/releases/download/release_0_9_13/desmume-0.9.13-macOS.dmg"]
+  ]),
+  E("azahar", "Azahar (antes Lime3DS)", ["3ds"], { v: "2126.2", official: GH + "azahar-emu/azahar", notes: "Lime3DS pasó a llamarse Azahar. Es la opción activa para 3DS en PC y Android." }, [
+    ["Android", "azahar-android-vanilla-2126.2.apk", "47.9 MB", GH + "azahar-emu/azahar/releases/download/2126.2/azahar-android-vanilla-2126.2.apk"],
+    ["Windows", "azahar-windows-msvc-2126.2.zip", "41.9 MB", GH + "azahar-emu/azahar/releases/download/2126.2/azahar-windows-msvc-2126.2.zip"],
+    ["Linux", "azahar.AppImage", "98.9 MB", GH + "azahar-emu/azahar/releases/download/2126.2/azahar.AppImage"],
+    ["macOS", "azahar-macos-universal-2126.2.zip", "109 MB", GH + "azahar-emu/azahar/releases/download/2126.2/azahar-macos-universal-2126.2.zip"]
+  ]),
+  E("citra-pablomk7", "Citra (fork de PabloMK7)", ["3ds"], { status: "abandonado", official: GH + "PabloMK7/citra", notes: "Repositorio archivado en octubre de 2024. Usa Azahar." }, []),
+  E("mandarine3ds", "Mandarine3DS (Mandarine-Neo)", ["3ds"], { v: "r1.3.0", official: GH + "ptyfyre/mandarine-neo", notes: "Continuación de Mandarine3DS." }, [
+    ["Android", "mandarine-android-universal-20260415-3f023d0.apk", "48.5 MB", GH + "ptyfyre/mandarine-neo/releases/download/r1.3.0/mandarine-android-universal-20260415-3f023d0.apk"],
+    ["Windows", "mandarine-windows-msvc-20260415-3f023d0.zip", "47.3 MB", GH + "ptyfyre/mandarine-neo/releases/download/r1.3.0/mandarine-windows-msvc-20260415-3f023d0.zip"],
+    ["Linux", "mandarine-linux-appimage-20260415-3f023d0.tar.gz", "101 MB", GH + "ptyfyre/mandarine-neo/releases/download/r1.3.0/mandarine-linux-appimage-20260415-3f023d0.tar.gz"],
+    ["macOS", "mandarine-macos-universal-20260415-3f023d0.zip", "132 MB", GH + "ptyfyre/mandarine-neo/releases/download/r1.3.0/mandarine-macos-universal-20260415-3f023d0.zip"]
+  ]),
+  E("panda3ds", "Panda3DS", ["3ds"], { v: "0.9", official: "https://panda3ds.com", notes: "Versión estable 0.9. El sitio oficial ofrece compilaciones nocturnas más recientes." }, [
+    ["Android", "android-arm64.zip", "7.4 MB", GH + "wheremyfoodat/Panda3DS/releases/download/v0.9/android-arm64.zip"],
+    ["Windows", "Windows-Qt.zip", "24.9 MB", GH + "wheremyfoodat/Panda3DS/releases/download/v0.9/Windows-Qt.zip"],
+    ["Linux", "Linux-Qt.zip", "34.1 MB", GH + "wheremyfoodat/Panda3DS/releases/download/v0.9/Linux-Qt.zip"],
+    ["macOS", "MacOS-Qt.zip", "67.9 MB", GH + "wheremyfoodat/Panda3DS/releases/download/v0.9/MacOS-Qt.zip"]
+  ]),
+
+  /* Sony */
+  E("duckstation", "DuckStation", ["ps1"], { v: "continua", official: "https://www.duckstation.org/", notes: "Versión continua de GitHub. En Android hay una beta de pruebas y la app de Google Play." }, [
+    ["Windows", "duckstation-windows-x64-release.zip", "69.9 MB", GH + "stenzek/duckstation/releases/download/latest/duckstation-windows-x64-release.zip"],
+    ["Linux", "DuckStation-x64.AppImage", "89 MB", GH + "stenzek/duckstation/releases/download/latest/DuckStation-x64.AppImage"],
+    ["macOS", "duckstation-mac-release.zip", "90.8 MB", GH + "stenzek/duckstation/releases/download/latest/duckstation-mac-release.zip"],
+    ["Android", "duckstation-11833.apk (beta de pruebas)", "", "https://downloads.duckstation.org/android-testing/downloads/duckstation-11833.apk", "https://play.google.com/store/apps/details?id=com.github.stenzek.duckstation"]
+  ]),
+  E("epsxe", "ePSXe", ["ps1"], { v: "2.0.18", official: "https://www.epsxe.com/download.php", notes: "Proyecto casi congelado. En Android solo por Google Play." }, [
+    ["Windows", "ePSXe2018.zip", "1.5 MB", "https://www.epsxe.com/files/ePSXe2018.zip"],
+    ["Linux", "ePSXe205linux_x64.zip", "1.3 MB", "https://www.epsxe.com/files/ePSXe205linux_x64.zip"],
+    ["Android", "Google Play", "", "", "https://play.google.com/store/apps/details?id=com.epsxe.ePSXe"]
+  ]),
+  E("swanstation", "SwanStation", ["ps1"], { status: "no-verificado", official: GH + "libretro/swanstation", notes: "Núcleo de RetroArch basado en DuckStation. Se instala desde RetroArch." }, []),
+  E("pcsx2", "PCSX2", ["ps2"], { v: "2.8.2", official: GH + "PCSX2/pcsx2/releases", notes: "Versión estable. Existen pre-lanzamientos 2.9.x más nuevos." }, [
+    ["Windows", "pcsx2-v2.8.2-windows-x64-Qt.7z", "24.5 MB", GH + "PCSX2/pcsx2/releases/download/v2.8.2/pcsx2-v2.8.2-windows-x64-Qt.7z"],
+    ["Linux", "pcsx2-v2.8.2-linux-appimage-x64-Qt.AppImage", "57.3 MB", GH + "PCSX2/pcsx2/releases/download/v2.8.2/pcsx2-v2.8.2-linux-appimage-x64-Qt.AppImage"],
+    ["macOS", "pcsx2-v2.8.2-macos-Qt.tar.xz", "23.2 MB", GH + "PCSX2/pcsx2/releases/download/v2.8.2/pcsx2-v2.8.2-macos-Qt.tar.xz"]
+  ]),
+  E("nethersx2", "NetherSX2", ["ps2"], { v: "2.2n", official: GH + "Trixarian/NetherSX2-patch", notes: "Basado en AetherSX2, que ya no se desarrolla." }, [
+    ["Android", "NetherSX2-v2.2n-4248.apk", "20.6 MB", GH + "Trixarian/NetherSX2-patch/releases/download/2.2n/NetherSX2-v2.2n-4248.apk"]
+  ]),
+  E("play", "Play!", ["ps2"], { v: "0.72", official: "https://purei.org/downloads.php" }, [
+    ["Windows", "Play-x86-64.exe", "10 MB", "https://purei.org/downloads/play/stable/0.72/Play-x86-64.exe"],
+    ["Linux", "Play!-8de4a71f-x86_64.AppImage", "50 MB", "https://purei.org/downloads/play/stable/0.72/Play!-8de4a71f-x86_64.AppImage"],
+    ["macOS", "Play.dmg", "27 MB", "https://purei.org/downloads/play/stable/0.72/Play.dmg"],
+    ["Android", "Play-release.apk", "13 MB", "https://purei.org/downloads/play/stable/0.72/Play-release.apk", "https://play.google.com/store/apps/details?id=com.virtualapplications.play"]
+  ]),
+  E("ppsspp", "PPSSPP", ["psp"], { v: "1.20.4", official: "https://www.ppsspp.org/download/" }, [
+    ["Windows", "ppsspp_win.zip (portable)", "", "https://www.ppsspp.org/files/1_20_4/ppsspp_win.zip"],
+    ["Android", "ppsspp.apk", "", "https://www.ppsspp.org/files/1_20_4/ppsspp.apk", "https://play.google.com/store/apps/details?id=org.ppsspp.ppsspp"]
+  ]),
+  E("vita3k", "Vita3K", ["vita"], { v: "continua", official: GH + "Vita3K/Vita3K", notes: "Compilaciones automáticas, actualizadas a diario." }, [
+    ["Windows", "windows-latest.zip", "36 MB", GH + "Vita3K/Vita3K/releases/download/continuous/windows-latest.zip"],
+    ["Linux", "Vita3K-x86_64.AppImage", "74.8 MB", GH + "Vita3K/Vita3K/releases/download/continuous/Vita3K-x86_64.AppImage"],
+    ["macOS", "macos-arm64-latest.dmg", "57.4 MB", GH + "Vita3K/Vita3K/releases/download/continuous/macos-arm64-latest.dmg"],
+    ["Android", "android-latest.apk", "27.7 MB", GH + "Vita3K/Vita3K/releases/download/continuous/android-latest.apk"]
+  ]),
+  E("rpcs3", "RPCS3", ["ps3"], { v: "0.0.43", official: "https://rpcs3.net/download", notes: "Compilaciones diarias; el enlace apunta a la compilación vista el 22 de octubre." }, [
+    ["Windows", "rpcs3-v0.0.43-20375-0dec46b1_win64_msvc.7z", "35.2 MB", GH + "RPCS3/rpcs3-binaries-win/releases/download/build-0dec46b12e856756ba04271207a99a1de2208720/rpcs3-v0.0.43-20375-0dec46b1_win64_msvc.7z"],
+    ["Linux", "rpcs3-v0.0.43-20372-e53ac18f_linux64.AppImage", "79.3 MB", GH + "RPCS3/rpcs3-binaries-linux/releases/download/build-e53ac18f8ddd4cfd0e92a57d15740d4170c1e744/rpcs3-v0.0.43-20372-e53ac18f_linux64.AppImage"]
+  ]),
+  E("shadps4", "shadPS4", ["ps4"], { v: "0.18.0", official: GH + "shadps4-emu/shadPS4/releases", notes: "Hay una 0.20.0 más nueva; no vi sus archivos, así que los enlaces son de la 0.18.0." }, [
+    ["Windows", "shadps4-win64-sdl-0.18.0.zip", "31.7 MB", GH + "shadps4-emu/shadPS4/releases/download/v.0.18.0/shadps4-win64-sdl-0.18.0.zip"],
+    ["Linux", "shadps4-linux-sdl-0.18.0.zip", "33.2 MB", GH + "shadps4-emu/shadPS4/releases/download/v.0.18.0/shadps4-linux-sdl-0.18.0.zip"],
+    ["macOS", "shadps4-macos-sdl-0.18.0.zip", "36.6 MB", GH + "shadps4-emu/shadPS4/releases/download/v.0.18.0/shadps4-macos-sdl-0.18.0.zip"]
+  ]),
+
+  /* Sega, Microsoft, arcade y Atari */
+  E("flycast", "Flycast", ["dreamcast"], { v: "2.7", official: GH + "flyinghead/flycast", notes: "Dreamcast y Naomi." }, [
+    ["Windows", "flycast-win64-2.7.zip", "9.4 MB", GH + "flyinghead/flycast/releases/download/v2.7/flycast-win64-2.7.zip"],
+    ["Linux", "flycast-x86_64-2.7.AppImage", "19.5 MB", GH + "flyinghead/flycast/releases/download/v2.7/flycast-x86_64-2.7.AppImage"],
+    ["macOS", "flycast-macOS-2.7.zip", "18.5 MB", GH + "flyinghead/flycast/releases/download/v2.7/flycast-macOS-2.7.zip"],
+    ["Android", "flycast-2.7.apk", "34.6 MB", GH + "flyinghead/flycast/releases/download/v2.7/flycast-2.7.apk"]
+  ]),
+  E("redream", "Redream", ["dreamcast"], { v: "1.5.0", official: "https://redream.io/download", notes: "La versión estable tiene años. Las compilaciones de desarrollo son más recientes." }, [
+    ["Windows", "redream.x86_64-windows-v1.5.0.zip (estable)", "", "https://redream.io/download/redream.x86_64-windows-v1.5.0.zip"],
+    ["Windows", "redream.x86_64-windows-v1.5.0-1240-gc41f7f2.zip (desarrollo)", "", "https://redream.io/download/redream.x86_64-windows-v1.5.0-1240-gc41f7f2.zip"],
+    ["Linux", "redream.x86_64-linux-v1.5.0-1240-gc41f7f2.tar.gz", "", "https://redream.io/download/redream.x86_64-linux-v1.5.0-1240-gc41f7f2.tar.gz"],
+    ["macOS", "redream.universal-mac-v1.5.0-1240-gc41f7f2.tar.gz", "", "https://redream.io/download/redream.universal-mac-v1.5.0-1240-gc41f7f2.tar.gz"]
+  ]),
+  E("md-emu", "MD.emu", ["genesis"], { v: "nightly", light: true, official: GH + "Rakashazi/emu-ex-plus-alpha", notes: "Mega Drive, Genesis, Sega CD y 32X. Compilación nocturna en .zip (contiene el APK)." }, [
+    ["Android", "MdEmu.zip (contiene el APK)", "5.4 MB", GH + "Rakashazi/emu-ex-plus-alpha/releases/download/Pre-release/MdEmu.zip"]
+  ]),
+  E("yaba-sanshiro-2", "Yaba Sanshiro 2", ["saturn"], { official: "https://play.google.com/store/apps/details?id=org.devmiyax.yabasanshioro2.pro", notes: "Solo en Google Play (versión Pro)." }, [
+    ["Android", "Google Play", "", "", "https://play.google.com/store/apps/details?id=org.devmiyax.yabasanshioro2.pro"]
+  ]),
+  E("xemu", "xemu", ["xbox"], { v: "0.8.138", official: GH + "xemu-project/xemu", notes: "Necesita BIOS y disco duro propios." }, [
+    ["Windows", "xemu-win-x86_64-release.zip", "10.9 MB", GH + "xemu-project/xemu/releases/download/v0.8.138/xemu-win-x86_64-release.zip"],
+    ["Linux", "xemu-0.8.138-x86_64.AppImage", "17.1 MB", GH + "xemu-project/xemu/releases/download/v0.8.138/xemu-0.8.138-x86_64.AppImage"],
+    ["macOS", "xemu-0.8.138-macos-universal.zip", "20.5 MB", GH + "xemu-project/xemu/releases/download/v0.8.138/xemu-0.8.138-macos-universal.zip"]
+  ]),
+  E("xenia", "Xenia (Canary)", ["x360"], { v: "e6cd2e4", official: "https://xenia.jp/download/", notes: "Es la rama Canary, la que enlaza xenia.jp." }, [
+    ["Windows", "xenia_canary_windows.7z", "3.5 MB", GH + "xenia-canary/xenia-canary/releases/download/e6cd2e4/xenia_canary_windows.7z"],
+    ["Linux", "xenia_canary_linux.AppImage", "17.9 MB", GH + "xenia-canary/xenia-canary/releases/download/e6cd2e4/xenia_canary_linux.AppImage"]
+  ]),
+  E("mame", "MAME", ["arcade"], { v: "0.289", official: "https://www.mamedev.org", notes: "Autoextraíble 7z. Puede haber una versión más nueva en mamedev.org." }, [
+    ["Windows", "mame0289b_x64.exe", "83.6 MB", GH + "mamedev/mame/releases/download/mame0289/mame0289b_x64.exe"]
+  ]),
+  E("stella", "Stella", ["atari2600"], { v: "7.0", official: GH + "stella-emu/stella" }, [
+    ["Windows", "Stella-7.0c-windows.zip", "4.1 MB", GH + "stella-emu/stella/releases/download/7.0/Stella-7.0c-windows.zip"],
+    ["macOS", "Stella-7.0-macos.dmg", "10.1 MB", GH + "stella-emu/stella/releases/download/7.0/Stella-7.0-macos.dmg"],
+    ["Linux", "stella_7.0_amd64.deb", "2.9 MB", GH + "stella-emu/stella/releases/download/7.0/stella_7.0_amd64.deb"]
+  ]),
+
+  /* Front-ends */
+  E("cocoonfe", "CocoonFE", ["frontends"], { v: "beta-3.07", official: GH + "inssekt/CocoonFE", notes: "Pensado para portátiles de doble pantalla como la AYN Thor. Incluye scraper propio." }, [
+    ["Android", "cocoon-307.apk", "183 MB", GH + "inssekt/CocoonFE/releases/download/beta-3.07/cocoon-307.apk"]
+  ]),
+  E("iisu", "iiSU", ["frontends"], { v: "0.0.7.4 alfa", official: GH + "iisu-network/iiSU", notes: "Versión alfa. Navegación por tarjetas, con RetroAchievements y RomM." }, [
+    ["Android", "iiSU-Alpha-7.4.apk", "122 MB", GH + "iisu-network/iiSU/releases/download/0.0.7.4/iiSU-Alpha-7.4.apk"]
+  ]),
+  E("es-de", "ES-DE", ["frontends"], { v: "3.5.0", official: "https://es-de.org/", notes: "En Android es de pago (Patreon, Galaxy Store o AppGallery) y no hay APK público." }, [
+    ["Windows", "ES-DE portable (x64)", "", "https://gitlab.com/es-de/emulationstation-de/-/package_files/357718057/download"],
+    ["Windows", "ES-DE instalador", "", "https://gitlab.com/es-de/emulationstation-de/-/package_files/357717909/download"],
+    ["Linux", "ES-DE x64 AppImage", "", "https://gitlab.com/es-de/emulationstation-de/-/package_files/357718352/download"],
+    ["Linux", "ES-DE aarch64 AppImage", "", "https://gitlab.com/es-de/emulationstation-de/-/package_files/357718204/download"],
+    ["Linux", "ES-DE Steam Deck AppImage", "", "https://gitlab.com/es-de/emulationstation-de/-/package_files/357718506/download"],
+    ["macOS", "ES-DE Apple silicon", "", "https://gitlab.com/es-de/emulationstation-de/-/package_files/357717468/download"],
+    ["macOS", "ES-DE Intel", "", "https://gitlab.com/es-de/emulationstation-de/-/package_files/357717755/download"]
+  ]),
+  E("daijishou", "Daijishō", ["frontends"], { v: "1.5.0", official: GH + "TapiocaFox/Daijishou", notes: "Widgets, carátulas retro y logros." }, [
+    ["Android", "416.apk", "17.1 MB", GH + "TapiocaFox/Daijishou/releases/download/v1.5.0/416.apk"]
+  ]),
+  E("beacon", "Beacon Launcher", ["frontends"], { official: "https://grand-screen.com/apps/beacon-game-launcher/", notes: "Lanzador limpio y rápido." }, [
+    ["Android", "Google Play", "", "", "https://play.google.com/store/apps/details?id=com.radikal.gamelauncher"]
+  ]),
+  E("emudeck", "EmuDeck", ["frontends"], { v: "2.7.1", official: "https://www.emudeck.com/", notes: "Instala y configura emuladores, carpetas y accesos directos. Los archivos son del repositorio EmuDeck/emudeck-electron." }, [
+    ["Windows", "EmuDeck-Setup-2.7.1.exe", "156 MB", GH + "EmuDeck/emudeck-electron/releases/download/v2.7.1/EmuDeck-Setup-2.7.1.exe"],
+    ["Linux", "EmuDeck-2.7.1-x86_64.AppImage (Steam Deck)", "180 MB", GH + "EmuDeck/emudeck-electron/releases/download/v2.7.1/EmuDeck-2.7.1-x86_64.AppImage"],
+    ["Linux", "EmuDeck-2.7.1-arm64.AppImage", "180 MB", GH + "EmuDeck/emudeck-electron/releases/download/v2.7.1/EmuDeck-2.7.1-arm64.AppImage"]
+  ]),
+  E("launchbox", "LaunchBox / Big Box", ["frontends"], { official: "https://www.launchbox-app.com/download", notes: "El instalador es un enlace dinámico. Descárgalo desde la página oficial. También hay versión Android." }, []),
+  E("playnite", "Playnite", ["frontends"], { v: "10.63", official: GH + "JosefNemec/Playnite", notes: "Código abierto. Une Steam, Epic y tus emuladores." }, [
+    ["Windows", "Playnite1063.exe (instalador)", "145 MB", GH + "JosefNemec/Playnite/releases/download/10.63/Playnite1063.exe"],
+    ["Windows", "10.63.7z (portable)", "127 MB", GH + "JosefNemec/Playnite/releases/download/10.63/10.63.7z"]
+  ]),
+  E("pegasus", "Pegasus Frontend", ["frontends"], { v: "alpha16-82", official: GH + "mmatyas/pegasus-frontend", notes: "Muy rápido y ligero. Última versión estable de octubre de 2024." }, [
+    ["Windows", "pegasus-fe_alpha16-82_win-mingw-static.zip", "14.7 MB", GH + "mmatyas/pegasus-frontend/releases/download/weekly_2024w38/pegasus-fe_alpha16-82-gc3462e68_win-mingw-static.zip"],
+    ["Linux", "pegasus-fe_alpha16-82_x11-static.zip", "12.3 MB", GH + "mmatyas/pegasus-frontend/releases/download/weekly_2024w38/pegasus-fe_alpha16-82-gc3462e68_x11-static.zip"],
+    ["Linux", "pegasus-frontend_0.16.82_amd64.deb", "9.3 MB", GH + "mmatyas/pegasus-frontend/releases/download/weekly_2024w38/pegasus-frontend_0.16.82_amd64.deb"],
+    ["macOS", "pegasus-fe_alpha16-82_macos-static.zip", "10.8 MB", GH + "mmatyas/pegasus-frontend/releases/download/weekly_2024w38/pegasus-fe_alpha16-82-gc3462e68_macos-static.zip"],
+    ["Android", "pegasus-fe_alpha16-82_android64.apk (64 bits)", "17.3 MB", GH + "mmatyas/pegasus-frontend/releases/download/weekly_2024w38/pegasus-fe_alpha16-82-gc3462e68_android64.apk"],
+    ["Android", "pegasus-fe_alpha16-82_android.apk (32 bits)", "15.1 MB", GH + "mmatyas/pegasus-frontend/releases/download/weekly_2024w38/pegasus-fe_alpha16-82-gc3462e68_android.apk"]
+  ]),
+
+  /* Scrapers y arte */
+  E("steamgriddb", "SteamGridDB", ["scrapers"], { official: "https://www.steamgriddb.com/", notes: "Banners, portadas, logos transparentes e iconos hechos por la comunidad, incluso animados." }, []),
+  E("screenscraper", "ScreenScraper", ["scrapers"], { official: "https://www.screenscraper.fr/", notes: "Base de datos retro con capturas, videos y carátulas. Tiene registro de usuario y acceso de invitado." }, []),
+  E("igdb", "IGDB", ["scrapers"], { status: "no-verificado", official: "https://www.igdb.com/", notes: "Sinopsis, fechas y capturas oficiales. No pude abrir el sitio al revisarlo." }, []),
+  E("emumovies", "EmuMovies", ["scrapers"], { official: "https://emumovies.com/", notes: "Videos de juego y arte para front-ends. Pide cuenta; el arte es gratis y los videos son de pago." }, []),
+  E("thegamesdb", "TheGamesDB", ["scrapers"], { official: "https://thegamesdb.net/", notes: "Base de datos abierta con API, compatible con casi todos los front-ends." }, []),
+
+  /* Juegos de PC en Android */
+  E("winlator", "Winlator", ["winlator"], { v: "11.2.0", official: GH + "brunodev85/winlator", notes: "Corre juegos de Windows en Android. Pide un equipo potente." }, [
+    ["Android", "Winlator_11.2.apk", "150 MB", GH + "brunodev85/winlator/releases/download/v11.2.0/Winlator_11.2.apk"]
+  ]),
+  E("winlator-cmod", "Winlator Cmod", ["winlator"], { v: "13.1.1", official: GH + "coffincolors/winlator", notes: "Versión modificada de Winlator. El APK pesa 667 MB." }, [
+    ["Android", "Winlator-Cmod-v13.1.1.apk", "667 MB", GH + "coffincolors/winlator/releases/download/cmod_v13.1/Winlator-Cmod-v13.1.1.apk"]
+  ]),
+  E("mobox", "Mobox", ["winlator"], { status: "abandonado", official: GH + "olegos2/mobox", notes: "Repositorio archivado en junio de 2025. No tiene APK: se instala con Termux y un script." }, []),
+
+  /* Android en PC */
+  E("mumu", "MuMu Player 12", ["androidpc"], { official: "https://www.mumuplayer.com/", notes: "En su página oficial solo tienes que pulsar el botón de descargar." }, [
+    ["Windows", "Página de descarga (botón Descargar)", "", "https://www.mumuplayer.com/"]
+  ]),
+  E("ldplayer", "LDPlayer 9", ["androidpc"], { official: "https://www.ldplayer.net/", notes: "Instalador tomado del botón de ldplayer.net." }, [
+    ["Windows", "LDPlayer9_ens_1001_ld.exe", "", "https://setup.ldrescdn.com/download/LDPlayer9.exe?n=LDPlayer9_ens_1001_ld.exe"]
+  ]),
+  E("bluestacks", "BlueStacks 5", ["androidpc"], { official: "https://www.bluestacks.com/es/download.html", notes: "Abre la página de descarga y pulsa el botón de descargar." }, [
+    ["Windows", "Página de descarga", "", "https://www.bluestacks.com/es/download.html?utm_campaign=download-page-es"]
+  ])
+];
+var userEmus = [];
+
+var TIERS = { 1: "Gama baja", 2: "Gama media", 3: "Gama media-alta", 4: "Gama alta", 5: "Tope de gama o PC" };
+var TIER_HINT = {
+  1: "Ej.: Helio G25–G37, Unisoc, Snapdragon 4xx, Allwinner H700",
+  2: "Ej.: Snapdragon 680–695, Helio G80–G99, Dimensity 700",
+  3: "Ej.: Snapdragon 778G, Dimensity 1080, Exynos 1380, Tegra X1",
+  4: "Ej.: Snapdragon 865 a 8 Gen 1, Dimensity 1100, Apple A15",
+  5: "Ej.: Snapdragon 8 Gen 2 o superior, Steam Deck, PC con 8 núcleos"
+};
+var TYPES = { celular: "Celular", portatil: "Consola portátil", pc: "PC o laptop", consola: "Consola" };
+var VERDICTS = { ok: "Recomendada", lite: "Solo optimizados", no: "Muy pesada" };
+var STORE_KEY = "emu-device";
+
+var rail = document.getElementById("rail");
+var panel = document.getElementById("panel");
+var search = document.getElementById("search");
+var themeBtn = document.getElementById("theme");
+var deviceEl = document.getElementById("device");
+var picker = document.getElementById("picker");
+var active = CONSOLES[0].id;
+var profile = null;
+var showAll = false;
+var pending = { detect: null, claude: null };
+var sampleFn = null;
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+  });
+}
+function byId(id) {
+  for (var i = 0; i < CONSOLES.length; i++) if (CONSOLES[i].id === id) return CONSOLES[i];
+  return null;
+}
+
+/* Reconocimiento de procesadores. Es una clasificación aproximada, no una medición. */
+function snapTier(n) {
+  if (n >= 865) return 4;
+  if (n >= 845) return 3;
+  if (n >= 800) return 2;
+  if (n >= 765) return 3;
+  if (n >= 662) return 2;
+  return 1;
+}
+function socTier(txt) {
+  var s = String(txt || "").toLowerCase().replace(/[™®]/g, "").replace(/\s+/g, " ").trim();
+  if (s.length < 3) return null;
+  var m, n;
+  /* PC y portátiles tipo PC */
+  if ((m = /ryzen\s*([3579])/.exec(s))) return m[1] === "3" ? 3 : m[1] === "5" ? 4 : 5;
+  if (/\bz[12]\b|z1 extreme|zen ?[2-5]\b/.test(s)) return 5;
+  if ((m = /\bi([3579])[- ]?\d/.exec(s)) || (m = /core\s*(?:ultra\s*)?([3579])\b/.exec(s))) return m[1] === "3" ? 3 : m[1] === "5" ? 4 : 5;
+  if (/apple m\d|\bm[1-4]\b/.test(s)) return 5;
+  if (/celeron|pentium|atom|\bn\d{3}\b/.test(s)) return 2;
+  /* Snapdragon con "Gen" */
+  if ((/snapdragon|qualcomm|\bsd\b/.test(s) || /^\d[s+]? ?gen/.test(s)) && (m = /(\d)\s*([s+]?)\s*gen\s*(\d)/.exec(s))) {
+    var series = +m[1], plus = m[2], gen = +m[3];
+    if (series === 8) return plus === "s" && gen === 3 ? 4 : gen >= 2 ? 5 : 4;
+    if (series === 7) return (plus === "+" || gen >= 3) ? 4 : 3;
+    if (series === 6) return 2;
+    if (series === 4) return plus === "s" ? 1 : gen >= 2 ? 1 : 2;
+  }
+  if (/8 elite/.test(s)) return 5;
+  /* Snapdragon con número */
+  if ((m = /(?:snapdragon|qualcomm|\bsd\b)\s*-?\s*(\d{3,4})/.exec(s)) && +m[1] < 1000) return snapTier(+m[1]);
+  /* MediaTek */
+  if ((m = /dimensity\s*(\d{3,4})/.exec(s))) {
+    n = +m[1];
+    return n < 900 ? 2 : n < 1100 ? 3 : n < 1400 ? 4 : n < 7000 ? 2 : n < 8000 ? 3 : n < 9200 ? 4 : 5;
+  }
+  if (/helio|mediatek/.test(s) && (m = /\b([gpx])\s*(\d{2,3})\b/.exec(s))) {
+    n = +m[2];
+    if (m[1] === "g") return n <= 37 ? 1 : 2;
+    if (m[1] === "p") return n <= 35 ? 1 : 2;
+    return 2;
+  }
+  /* Unisoc */
+  if (/unisoc|spreadtrum|tiger/.test(s) || /\bsc\d{4}/.test(s)) {
+    m = /\bt(\d{3,4})\b/.exec(s);
+    return m && +m[1] > 615 ? 2 : 1;
+  }
+  /* Samsung Exynos */
+  if ((m = /exynos\s*(\d{3,4})/.exec(s))) {
+    n = +m[1];
+    return n < 990 ? 2 : n < 1080 ? 3 : n === 1080 ? 4 : n < 2100 ? 3 : n < 2400 ? 4 : 5;
+  }
+  /* Google Tensor */
+  if (/tensor/.test(s)) { m = /g\s*(\d)/.exec(s); return m && +m[1] >= 5 ? 5 : 4; }
+  /* Apple */
+  if (/apple|bionic/.test(s) || /^a\d{2}\b/.test(s)) {
+    m = /\ba(\d{2})\b/.exec(s);
+    if (m) return +m[1] <= 13 ? 3 : +m[1] <= 16 ? 4 : 5;
+  }
+  /* Huawei Kirin */
+  if ((m = /kirin\s*(\d{3,4})/.exec(s))) {
+    n = +m[1];
+    return n >= 9000 ? 4 : [980, 985, 990, 820].indexOf(n) >= 0 ? 3 : [950, 960, 970, 810].indexOf(n) >= 0 ? 2 : 1;
+  }
+  /* Otros */
+  if (/tegra\s*x1/.test(s)) return 3;
+  if (/tegra\s*k1/.test(s)) return 2;
+  if ((m = /rk\s*(\d{4})/.exec(s))) return m[1] === "3588" ? 3 : (m[1] === "3566" || m[1] === "3568" || m[1] === "3399") ? 2 : 1;
+  if (/allwinner|\bh[67]\d{2}\b/.test(s)) return 1;
+  return null;
+}
+
+/* Perfil del dispositivo */
+function effTier(p) {
+  var t = p.tier, r = p.ramMin;
+  if (typeof r === "number") {
+    if (r <= 2) t = Math.min(t, 2);
+    else if (r <= 3) t = Math.min(t, 3);
+  }
+  return t;
+}
+function verdictOf(c) {
+  if (!profile) return null;
+  if (c.pcOnly && !isPc(profile)) return "no";
+  var t = effTier(profile);
+  if (t >= c.smooth) return "ok";
+  if (c.lite != null && t >= c.lite) return "lite";
+  return "no";
+}
+function loadProfile() {
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      var p = JSON.parse(raw);
+      if (p && typeof p.tier === "number" && p.tier >= 1 && p.tier <= 5) return p;
+    }
+  } catch (e) {}
+  return null;
+}
+function saveProfile() {
+  try {
+    if (profile) localStorage.setItem(STORE_KEY, JSON.stringify(profile));
+    else localStorage.removeItem(STORE_KEY);
+  } catch (e) {}
+}
+function setProfile(p, source) {
+  profile = {
+    name: p.name, brand: p.brand || "", type: p.type || "celular", soc: p.soc || "", cores: p.cores || "",
+    ram: p.ram || "", ramMin: p.ramMin, screen: p.screen || "", screens: p.screens === 2 ? 2 : 1,
+    os: p.os || "", tier: p.tier, note: p.note || "", source: source
+  };
+  saveProfile();
+  showAll = false;
+  picker.hidden = true;
+  renderAll();
+}
+
+/* Barra de dispositivo */
+function renderDevice() {
+  if (!profile) {
+    deviceEl.innerHTML =
+      '<div class="info"><h2>¿En qué vas a jugar?</h2>' +
+      '<p>Elige tu celular o consola y la página te muestra solo las consolas que tu equipo puede mover.</p></div>' +
+      '<div class="acts"><button class="btn primary" type="button" data-act="open">Elegir mi dispositivo</button></div>';
+    return;
+  }
+  var counts = { ok: 0, lite: 0, no: 0 };
+  CONSOLES.forEach(function (c) { counts[verdictOf(c)]++; });
+  var chips = [];
+  if (profile.soc) chips.push(profile.soc);
+  if (profile.cores) chips.push(profile.cores + " núcleos");
+  if (profile.ram) chips.push("RAM " + profile.ram);
+  if (profile.screen) chips.push("Pantalla " + profile.screen);
+  chips.push(profile.screens === 2 ? "Dos pantallas" : "Una pantalla");
+  if (profile.os) chips.push(profile.os);
+  var srcLabel = { detectado: "Estimado en tu navegador", manual: "Datos manuales", claude: "Estimado por una IA" }[profile.source] || "";
+  deviceEl.innerHTML = '<div class="info"><h2>' + esc(profile.name) + '</h2><div class="meta">' +
+    '<span class="chip v">' + esc(TIERS[effTier(profile)]) + "</span>" +
+    chips.map(function (c) { return '<span class="chip">' + esc(c) + "</span>"; }).join("") +
+    (srcLabel ? '<span class="chip">' + esc(srcLabel) + "</span>" : "") + "</div>" +
+    (profile.note ? "<p>" + esc(profile.note) + "</p>" : "") +
+    '<div class="sumline"><span>' + counts.ok + ' recomendadas</span><span>' + counts.lite +
+    ' solo con emuladores optimizados</span><span>' + counts.no + (showAll ? " muy pesadas (visibles)" : " muy pesadas (ocultas)") + "</span>" +
+    '<button class="btn link" type="button" data-act="toggle">' +
+    (showAll ? "Ocultar las muy pesadas" : "Mostrar también las muy pesadas") + "</button></div></div>" +
+    '<div class="acts"><button class="btn primary" type="button" data-act="open">Cambiar</button>' +
+    '<button class="btn" type="button" data-act="clear">Quitar</button></div>';
+}
+deviceEl.addEventListener("click", function (ev) {
+  var b = ev.target.closest("[data-act]");
+  if (!b) return;
+  var a = b.getAttribute("data-act");
+  if (a === "open") { picker.hidden = false; picker.scrollIntoView({ block: "nearest" }); }
+  if (a === "toggle") { showAll = !showAll; renderAll(); }
+  if (a === "clear") { profile = null; saveProfile(); showAll = false; renderAll(); }
+});
+
+/* Barra lateral y panel */
+function renderRail() {
+  var q = search.value.trim().toLowerCase();
+  var makers = [];
+  CONSOLES.forEach(function (c) { if (makers.indexOf(c.maker) < 0) makers.push(c.maker); });
+  makers.sort(function (a, b) { return (b === "Front-ends y scrapers") - (a === "Front-ends y scrapers"); });
+  var html = "", shown = 0;
+  makers.forEach(function (m) {
+    var items = CONSOLES.filter(function (c) {
+      if (c.maker !== m) return false;
+      if (profile && !showAll && verdictOf(c) === "no") return false;
+      return !q || c.name.toLowerCase().indexOf(q) >= 0 || m.toLowerCase().indexOf(q) >= 0;
+    });
+    if (!items.length) return;
+    shown += items.length;
+    html += '<div class="group"><h2>' + esc(m) + '</h2><div class="tabs" role="tablist" aria-orientation="vertical">';
+    items.forEach(function (c) {
+      var v = verdictOf(c);
+      html += '<button class="tab" role="tab" type="button" data-id="' + c.id + '" aria-selected="' + (c.id === active) + '">' +
+        '<span class="l">' + (v ? '<i class="dot ' + v + '" title="' + VERDICTS[v] + '"></i>' : "") + esc(c.name) + "</span>" +
+        '<span class="n">' + emusFor(c).length + "</span></button>";
+    });
+    html += "</div></div>";
+  });
+  rail.innerHTML = shown ? html : '<p class="none">No hay consolas que mostrar con ese filtro.</p>';
+}
+function emusFor(c) {
+  var list = EMUS.filter(function (e) { return e.consoles.indexOf(c.id) >= 0; });
+  sharedEmus.concat(userEmus).forEach(function (u) { if (u.consoles.indexOf(c.id) >= 0) list.push(u); });
+  return list;
+}
+function platforms(p) {
+  var s = String(p.os || "").toLowerCase(), out = [];
+  if (/android/.test(s)) out.push("Android");
+  if (/\bios\b/.test(s)) out.push("iOS");
+  if (/windows/.test(s)) out.push("Windows");
+  if (/linux|steamos|chromeos/.test(s)) out.push("Linux");
+  if (/mac/.test(s)) out.push("macOS");
+  if (!out.length) {
+    if (p.type === "celular" || p.type === "portatil") out.push("Android");
+    else if (p.type === "pc") out.push("Windows", "Linux", "macOS");
+  }
+  return out;
+}
+function isPc(p) {
+  var pl = platforms(p);
+  return !pl.length || pl.some(function (x) { return x === "Windows" || x === "Linux" || x === "macOS"; });
+}
+function emuFits(e) {
+  if (!profile) return true;
+  var pl = platforms(profile);
+  if (!pl.length || !e.downloads.length) return true;
+  return e.downloads.some(function (d) { return pl.indexOf(d.os) >= 0; });
+}
+function vtUrl(url) { return "https://www.virustotal.com/gui/search/" + encodeURIComponent(url); }
+function rankOf(e, v) {
+  if (!profile) return 0;
+  if (!emuFits(e)) return 3;
+  if (e.light) return 0;
+  return v === "lite" ? 2 : 1;
+}
+function sortEmus(list, v) {
+  return list.map(function (e, i) { return { e: e, i: i }; }).sort(function (a, b) {
+    var ka = rankOf(a.e, v), kb = rankOf(b.e, v);
+    return ka - kb || a.i - b.i;
+  }).map(function (x) { return x.e; });
+}
+function emuCard(e) {
+  var hasLink = e.downloads.some(function (d) { return d.direct || (d.store && d.label !== "Buscar en Google Play"); });
+  if (!hasLink && !e.kind) {
+    var site = e.official || (e.downloads[0] && e.downloads[0].store) || "";
+    return '<article class="card"><div class="card-top"><h3>' + esc(e.name) + "</h3></div>" +
+      (site ? '<div class="card-foot"><a class="btn" href="' + esc(site) + '" target="_blank" rel="noopener noreferrer">Página principal</a></div>' : "") + "</article>";
+  }
+  var fits = emuFits(e);
+  var pl = profile ? platforms(profile) : [];
+  var badges = [];
+  if (e.light) badges.push('<span class="badge good">Optimizado</span>');
+  if (e.status === "abandonado") badges.push('<span class="badge bad">Abandonado</span>');
+  if (e.status === "no-verificado") badges.push('<span class="badge warn">Sin verificar</span>');
+  if (e.kind === "approved") badges.push('<span class="badge good">Aprobado</span>');
+  if (e.kind === "local") badges.push('<span class="badge mine">Tuyo · solo en tu navegador</span>');
+  if (e.kind === "sent") badges.push('<span class="badge warn">En revisión</span>');
+  if (e.kind === "rejected") badges.push('<span class="badge bad">No aprobado</span>');
+  if (profile && !fits) badges.push('<span class="badge warn">No es para tu sistema</span>');
+  var oses = [];
+  e.downloads.forEach(function (d) { if ((d.direct || d.store) && oses.indexOf(d.os) < 0) oses.push(d.os); });
+  oses.sort(function (a, b) { return (pl.indexOf(a) >= 0 ? 0 : 1) - (pl.indexOf(b) >= 0 ? 0 : 1); });
+  var rows = oses.map(function (os) {
+    var mine = profile && pl.indexOf(os) >= 0;
+    var btns = e.downloads.filter(function (d) { return d.os === os; }).map(function (d) {
+      var out = "";
+      if (d.direct) {
+        out += '<a class="dl" href="' + esc(d.direct) + '" target="_blank" rel="noopener noreferrer" title="' + esc(d.label) + '"><b>Descargar</b><small>' +
+          esc(d.label) + (d.size ? " · " + esc(d.size) : "") + "</small></a>" +
+          '<a class="vtl" href="' + esc(vtUrl(d.direct)) + '" target="_blank" rel="noopener noreferrer" title="Revisar este enlace en VirusTotal">VirusTotal</a>';
+      }
+      if (d.store) out += '<a class="btn" href="' + esc(d.store) + '" target="_blank" rel="noopener noreferrer">' + (d.direct ? "Google Play" : esc(d.label === "Buscar en Google Play" ? d.label : "Google Play")) + "</a>";
+      return out;
+    }).join("");
+    return '<div class="osrow' + (mine ? " me" : "") + '"><span class="chip">' + esc(os) + (mine ? " · tu sistema" : "") + '</span><div class="acts2">' + btns + "</div></div>";
+  }).join("");
+  var foot = "";
+  if (e.official) foot += (oses.length ? '<a href="' + esc(e.official) + '" target="_blank" rel="noopener noreferrer">Sitio oficial</a>'
+    : '<a class="btn" href="' + esc(e.official) + '" target="_blank" rel="noopener noreferrer">Abrir sitio</a>');
+  if (e.kind === "local" || e.kind === "sent" || e.kind === "rejected") foot += '<button class="btn link" type="button" data-rm-emu="' + esc(e.id) + '">' + (e.kind === "sent" ? "Cancelar envío" : "Quitar de mi lista") + "</button>";
+  if (e.kind === "approved" && me.owner) foot += '<button class="btn link" type="button" data-rm-shared="' + esc(e.rid) + '">Quitar de la página</button>';
+  return '<article class="card' + (profile && !fits ? " dim" : "") + '">' +
+    '<div class="card-top"><h3>' + esc(e.name) + '</h3><div class="badges">' + badges.join("") + "</div></div>" +
+    (e.v ? '<div class="os"><span class="chip">Versión ' + esc(e.v) + "</span></div>" : "") +
+    (e.notes ? "<p>" + esc(e.notes) + "</p>" : "") +
+    (rows ? '<div class="osrows">' + rows + "</div>" : "") +
+    (foot ? '<div class="card-foot">' + foot + "</div>" : "") + "</article>";
+}
+function renderPanel() {
+  var c = byId(active);
+  var v = verdictOf(c);
+  var list = emusFor(c);
+  var html = '<div class="panel-head"><h2>' + esc(c.name) + '</h2><div class="meta">' +
+    '<span class="chip">' + esc(c.maker) + '</span>' +
+    (c.year ? '<span class="chip">Lanzada en ' + c.year + '</span>' : "") +
+    '<span class="chip">' + esc(c.type) + '</span>' +
+    '<span class="chip">' + list.length + ' en la lista</span>' +
+    (v ? '<span class="chip v"><i class="dot ' + v + '"></i>' + VERDICTS[v] + " en tu equipo</span>" : "") + "</div>";
+  if (v) {
+    var pcOk = isPc(profile);
+    var msg = v === "ok" ? (c.tool ? "Tu equipo puede usar estos programas sin problema." : "Tu equipo mueve esta consola bien con la mayoría de emuladores.")
+      : v === "lite" ? (c.liteNote || "Solo con emuladores optimizados; algunos juegos pueden ir lentos.")
+      : (c.pcOnly && !pcOk ? "Solo hay emuladores para PC y no funcionan en tu equipo." : "Es muy exigente para tu equipo y probablemente irá lenta.");
+    var extra = [];
+    if (c.dual) {
+      extra.push(profile.screens === 2
+        ? "Tu equipo tiene dos pantallas: puedes jugarla con una pantalla de la consola en cada una."
+        : "Tu equipo tiene una pantalla: las dos pantallas de la consola se mostrarán juntas en una sola.");
+    }
+    if (v === "lite" && list.length && !list.some(function (e) { return e.light && emuFits(e); })) {
+      extra.push("Ningún emulador de esta lista está marcado como optimizado para equipos de gama baja.");
+    }
+    if (list.length && !list.some(function (e) { return emuFits(e); })) {
+      extra.push("Ningún programa de esta lista funciona en tu sistema (" + platforms(profile).join(", ") + ").");
+    }
+    html += '<p class="verdict"><b>' + esc(msg) + "</b>" + extra.map(function (t) { return "<span>" + esc(t) + "</span>"; }).join("") + "</p>";
+  }
+  html += "</div>";
+  if (!list.length) {
+    html += '<div class="empty"><div class="slot" aria-hidden="true"></div>' +
+      '<h3>Aún no hay emuladores para ' + esc(c.name) + '</h3>' +
+      '<p>Puedes agregar el primero con su enlace de descarga oficial. Antes de guardarlo debes revisarlo en VirusTotal.</p>' +
+      '<button class="btn primary" type="button" data-act2="add">Agregar un emulador</button></div>';
+  } else {
+    var hasDirect = list.some(function (e) { return e.downloads.some(function (d) { return d.direct; }); });
+    if (hasDirect) {
+      html += '<p class="notice">Los botones llevan directo al archivo del proyecto. Antes de abrir uno, usa el enlace «VirusTotal» de al lado para ver el análisis de decenas de antivirus. ' +
+        'Enlaces revisados el 22 de octubre de 2026; cambian cuando sale una versión nueva, y si uno falla puedes usar el sitio oficial.</p>';
+    }
+    html += '<div class="list">' + sortEmus(list, v).map(emuCard).join("") + "</div>" +
+      '<div class="row foot-row"><button class="btn" type="button" data-act2="add">Agregar un emulador a ' + esc(c.name) + "</button></div>";
+  }
+  panel.innerHTML = html;
+}
+function updateSub() {
+  var total = EMUS.length + userEmus.length + sharedEmus.length;
+  document.getElementById("sub").textContent = CONSOLES.length + " consolas y categorías · " + total + " programas con descarga";
+}
+function renderAll() {
+  if (profile && !showAll && verdictOf(byId(active)) === "no") {
+    var first = CONSOLES.filter(function (c) { return verdictOf(c) !== "no"; })[0];
+    if (first) active = first.id;
+  }
+  renderDevice();
+  renderRail();
+  renderPanel();
+  updateSub();
+}
+function select(id, updateHash) {
+  active = id;
+  renderRail();
+  renderPanel();
+  if (updateHash) { try { history.replaceState(null, "", "#" + id); } catch (e) {} }
+  try { localStorage.setItem("emu-tab", id); } catch (e) {}
+}
+rail.addEventListener("click", function (ev) {
+  var t = ev.target.closest(".tab");
+  if (t) select(t.getAttribute("data-id"), true);
+});
+search.addEventListener("input", renderRail);
+
+/* Selector: modos */
+var panes = { claude: "pane-claude", detect: "pane-detect", manual: "pane-manual" };
+function setMode(m) {
+  Object.keys(panes).forEach(function (k) { document.getElementById(panes[k]).hidden = k !== m; });
+  var btns = document.querySelectorAll("#modes button");
+  for (var i = 0; i < btns.length; i++) btns[i].setAttribute("aria-pressed", String(btns[i].getAttribute("data-mode") === m));
+}
+document.getElementById("modes").addEventListener("click", function (ev) {
+  var b = ev.target.closest("button");
+  if (b) setMode(b.getAttribute("data-mode"));
+});
+document.getElementById("close-picker").addEventListener("click", function () { picker.hidden = true; });
+
+function specList(p) {
+  var rows = [["Procesador o GPU", p.soc], ["Núcleos", p.cores], ["RAM", p.ram], ["Pantalla", p.screen], ["Sistema", p.os]];
+  return '<div class="meta">' + rows.filter(function (r) { return r[1]; }).map(function (r) {
+    return '<span class="chip">' + esc(r[0]) + ": " + esc(r[1]) + "</span>";
+  }).join("") + "</div>";
+}
+
+/* Modo detectar */
+function getGpu() {
+  try {
+    var c = document.createElement("canvas");
+    var gl = c.getContext("webgl") || c.getContext("experimental-webgl");
+    if (!gl) return "";
+    var ext = gl.getExtension("WEBGL_debug_renderer_info");
+    if (!ext) return "";
+    return String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || "");
+  } catch (e) { return ""; }
+}
+function detectOs(ua) {
+  if (/Android/i.test(ua)) return "Android";
+  if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
+  if (/CrOS/i.test(ua)) return "ChromeOS";
+  if (/Windows/i.test(ua)) return "Windows";
+  if (/Mac OS X|Macintosh/i.test(ua)) return "macOS";
+  if (/Linux/i.test(ua)) return "Linux";
+  return "";
+}
+function estimateTier(g, os, cores, mem) {
+  var mobile = os === "Android" || os === "iOS";
+  var t = null, m;
+  if ((m = /Adreno[^0-9]*(\d{3})/i.exec(g))) {
+    var n = +m[1];
+    t = n <= 530 ? 1 : n <= 619 ? 2 : n < 650 ? 3 : n < 700 ? 4 : n < 720 ? 3 : n < 740 ? 4 : 5;
+  } else if ((m = /Mali-?G(\d+)/i.exec(g))) {
+    var k = +m[1];
+    t = k <= 51 ? 1 : k <= 57 ? 2 : k <= 68 ? 3 : k === 77 ? 3 : k < 720 ? 4 : 5;
+  } else if (/Apple/i.test(g)) {
+    t = os === "iOS" ? 4 : 5;
+  }
+  if (t == null) {
+    if (mobile) t = mem ? (mem <= 2 ? 1 : mem <= 4 ? 2 : 3) : (cores && cores <= 4 ? 1 : 2);
+    else t = cores >= 8 ? 5 : cores >= 6 ? 4 : cores >= 4 ? 3 : 2;
+  } else if (!mobile) {
+    if (/Intel.*(HD|UHD)/i.test(g)) t = Math.min(t, 3);
+    else if (/Intel.*Iris/i.test(g)) t = Math.min(t, 4);
+  }
+  return t;
+}
+async function detectDevice() {
+  var nav = navigator, ua = nav.userAgent || "";
+  var os = detectOs(ua);
+  var cores = nav.hardwareConcurrency || null;
+  var mem = nav.deviceMemory || null;
+  var gpu = getGpu();
+  var model = "";
+  var mm = /Android[^;]*;\s*([^;)]+?)(?:\s+Build|\))/i.exec(ua);
+  if (mm) model = mm[1].trim();
+  try {
+    if (nav.userAgentData && nav.userAgentData.getHighEntropyValues) {
+      var hv = await nav.userAgentData.getHighEntropyValues(["model"]);
+      if (hv && hv.model) model = hv.model;
+    }
+  } catch (e) {}
+  if (model.length < 3 || /^K$/i.test(model)) model = "";
+  var tier = estimateTier(gpu, os, cores, mem);
+  var dpr = window.devicePixelRatio || 1;
+  var isMobile = os === "Android" || os === "iOS";
+  return {
+    name: model || (isMobile ? "Este dispositivo" : "Este equipo" + (os ? " (" + os + ")" : "")),
+    model: model,
+    type: isMobile ? "celular" : "pc",
+    soc: gpu ? "GPU: " + gpu : "GPU no detectada",
+    cores: cores ? String(cores) : "",
+    ram: mem ? (mem >= 8 ? "8 GB o más (aprox.)" : "≈ " + mem + " GB") : "No detectada",
+    ramMin: mem || undefined,
+    screen: Math.round(screen.width * dpr) + "×" + Math.round(screen.height * dpr) + " px",
+    screens: 1, os: os, tier: tier
+  };
+}
+var detectBtn = document.getElementById("detect-btn");
+var detectOut = document.getElementById("detect-out");
+detectBtn.addEventListener("click", async function () {
+  detectBtn.disabled = true;
+  detectOut.innerHTML = '<p class="hint">Detectando…</p>';
+  try {
+    var p = await detectDevice();
+    pending.detect = p;
+    detectOut.innerHTML = '<div class="cand"><h3>' + esc(p.name) + "</h3>" + specList(p) +
+      '<div class="meta"><span class="chip v">' + esc(TIERS[effTier(p)]) + "</span></div>" +
+      '<p class="warn">Es una estimación: el navegador no muestra el chip exacto y no sabe si tu equipo tiene dos pantallas. Si no coincide, corrige los datos en Manual.</p>' +
+      '<div class="row"><button class="btn primary" type="button" id="detect-use">Usar este dispositivo</button>' +
+      (p.model ? '<button class="btn" type="button" id="detect-ai">Buscar «' + esc(p.model) + '» con una IA</button>' : "") + "</div></div>";
+  } catch (e) {
+    detectOut.innerHTML = '<p class="warn">No se pudo detectar este equipo. Usa el modo Manual o pregúntale a una IA.</p>';
+  }
+  detectBtn.disabled = false;
+});
+detectOut.addEventListener("click", function (ev) {
+  if (ev.target.id === "detect-use" && pending.detect) setProfile(pending.detect, "detectado");
+  if (ev.target.id === "detect-ai" && pending.detect) {
+    cName.value = pending.detect.model;
+    updateWeb();
+    setMode("claude");
+    cGo.click();
+  }
+});
+
+/* Modo manual */
+var mTier = document.getElementById("m-tier");
+var mSoc = document.getElementById("m-soc");
+var mAi = document.getElementById("m-ai");
+var mHint = document.getElementById("m-hint");
+var tierTouched = false;
+mTier.innerHTML = [1, 2, 3, 4, 5].map(function (t) { return '<option value="' + t + '"' + (t === 2 ? " selected" : "") + ">" + TIERS[t] + "</option>"; }).join("");
+function updateMHint() {
+  var txt = mSoc.value.trim();
+  var r = socTier(txt);
+  mAi.hidden = !(txt && r == null);
+  if (r != null) {
+    if (!tierTouched) mTier.value = String(r);
+    mHint.textContent = "Reconocimos «" + txt + "» como " + TIERS[r].toLowerCase() + "." +
+      (+mTier.value !== r ? " Elegiste " + TIERS[+mTier.value].toLowerCase() + "." : "");
+  } else if (txt) {
+    mHint.textContent = "No reconocemos ese procesador. Elige la gama a mano o pregúntale a una IA.";
+  } else {
+    mHint.textContent = TIER_HINT[+mTier.value];
+  }
+}
+mSoc.addEventListener("input", function () { tierTouched = false; updateMHint(); });
+mTier.addEventListener("change", function () { tierTouched = true; updateMHint(); });
+updateMHint();
+document.getElementById("m-save").addEventListener("click", function () {
+  var type = document.getElementById("m-type").value;
+  var ram = +document.getElementById("m-ram").value;
+  var name = document.getElementById("m-name").value.trim() || ("Mi " + TYPES[type].toLowerCase());
+  setProfile({
+    name: name, type: type, soc: mSoc.value.trim() || TIERS[+mTier.value], ram: ram + " GB" + (ram === 16 ? " o más" : ""), ramMin: ram,
+    screens: +document.getElementById("m-screens").value, tier: +mTier.value
+  }, "manual");
+});
+mAi.addEventListener("click", async function () {
+  var txt = mSoc.value.trim();
+  if (!txt) return;
+  if (!sampleFn) { mHint.textContent = "La IA no está disponible en esta vista. Elige la gama a mano."; return; }
+  mAi.disabled = true;
+  mHint.textContent = "Consultando a una IA…";
+  try {
+    var d = await sampleFn.json(
+      "Clasifica este procesador de un celular, consola portátil o PC para jugar con emuladores: " + JSON.stringify(txt) + ".\n" +
+      "Responde SOLO con un objeto JSON: {\"found\": boolean, \"tier\": entero de 1 a 5, \"note\": string corta en español}.\n" +
+      "Escala: 1 = gama baja (Helio G25–G37, Unisoc, Snapdragon 4xx, Allwinner H700); 2 = gama media (Snapdragon 680–695, Helio G80–G99); " +
+      "3 = media-alta (Snapdragon 778G, Dimensity 1080, Exynos 1380, Tegra X1); 4 = alta (Snapdragon 865 a 8 Gen 1, Dimensity 1100, Apple A15); " +
+      "5 = tope de gama (Snapdragon 8 Gen 2 o superior, Steam Deck, PC con 8 núcleos). Si no lo conoces con seguridad, found en false.",
+      { modelTier: "default" }
+    );
+    var t = d && Math.round(Number(d.tier));
+    if (d && d.found === true && t >= 1 && t <= 5) {
+      mTier.value = String(t);
+      tierTouched = true;
+      mHint.textContent = "Una IA lo clasificó como " + TIERS[t].toLowerCase() + "." + (d.note ? " " + String(d.note).slice(0, 140) : "") + " Puede equivocarse; cambia la gama si no coincide.";
+    } else {
+      mHint.textContent = "La IA no reconoció ese procesador con seguridad. Elige la gama a mano.";
+    }
+  } catch (e) {
+    mHint.textContent = e && e.code === "not_granted" ? "No diste permiso para usar la IA en esta página."
+      : e && e.code === "rate_limited" ? "Se alcanzó el límite de uso. Inténtalo más tarde."
+      : "No se pudo consultar a la IA. Elige la gama a mano.";
+  }
+  mAi.disabled = false;
+});
+
+/* Modo preguntarle a una IA */
+var cGo = document.getElementById("c-go");
+var cName = document.getElementById("c-name");
+var cOut = document.getElementById("c-out");
+var cWeb = document.getElementById("c-web");
+function updateWeb() {
+  var q = cName.value.trim();
+  cWeb.hidden = !q;
+  if (q) cWeb.href = "https://www.google.com/search?q=" + encodeURIComponent(q + " especificaciones procesador RAM");
+}
+cName.addEventListener("input", updateWeb);
+function aiPrompt(name) {
+  return "Eres experto en hardware de celulares, consolas portátiles y PCs para jugar. El usuario dice que su dispositivo es: " + JSON.stringify(name) + ".\n" +
+    "Responde SOLO con un objeto JSON con estas claves: found (boolean; false si no reconoces el dispositivo con seguridad), name (string), brand (string), " +
+    'type ("celular" | "portatil" | "pc" | "consola"), soc (string con el procesador), cores (string con la cantidad de núcleos), ramGb (número: la RAM de la versión más modesta), ' +
+    "ram (string, por ejemplo \"6–8 GB\"), screen (string con el tamaño de pantalla), screens (1 o 2; 2 solo si tiene dos pantallas físicas o plegable), os (string), " +
+    "tier (entero 1 a 5), note (una frase corta en español, opcional).\n" +
+    "Escala de tier para emular: 1 = gama baja (Helio G25–G37, Unisoc, Snapdragon 4xx, Allwinner H700); 2 = gama media (Snapdragon 680–695, Helio G80–G99); " +
+    "3 = media-alta (Snapdragon 778G, Dimensity 1080, Exynos 1380, Tegra X1); 4 = alta (Snapdragon 865 a 8 Gen 1, Dimensity 1100, Apple A15); " +
+    "5 = tope de gama (Snapdragon 8 Gen 2 o superior, Steam Deck, PC con 8 núcleos).\n" +
+    "No inventes especificaciones: si dudas, devuelve found en false.";
+}
+cGo.addEventListener("click", async function () {
+  var name = cName.value.trim();
+  if (!name) { cOut.innerHTML = '<p class="warn">Escribe el modelo de tu dispositivo.</p>'; return; }
+  if (!sampleFn) {
+    cOut.innerHTML = '<p class="warn">La IA no está disponible en esta vista. Usa el enlace para ver las especificaciones en internet y escribe el procesador en Manual.</p>';
+    return;
+  }
+  cGo.disabled = true;
+  cOut.innerHTML = '<p class="hint">Buscando…</p>';
+  try {
+    var d = await sampleFn.json(aiPrompt(name), { modelTier: "default" });
+    var t = d && Math.round(Number(d.tier));
+    if (!d || d.found !== true || !(t >= 1 && t <= 5) || !d.name) {
+      cOut.innerHTML = '<p class="warn">La IA no reconoció ese dispositivo con seguridad. Abre el enlace para ver sus especificaciones, copia el procesador y escríbelo en Manual.</p>';
+    } else {
+      var ramGb = Number(d.ramGb);
+      var p = {
+        name: String(d.name).slice(0, 80), brand: String(d.brand || ""), type: TYPES[d.type] ? d.type : "celular",
+        soc: String(d.soc || ""), cores: String(d.cores || ""), ram: String(d.ram || (ramGb ? ramGb + " GB" : "")),
+        ramMin: ramGb > 0 ? ramGb : undefined, screen: String(d.screen || ""), screens: +d.screens === 2 ? 2 : 1,
+        os: String(d.os || ""), tier: t, note: d.note ? String(d.note).slice(0, 160) : ""
+      };
+      pending.claude = p;
+      cOut.innerHTML = '<div class="cand"><h3>' + esc(p.name) + "</h3>" + specList(p) +
+        '<div class="meta"><span class="chip v">' + esc(TIERS[effTier(p)]) + "</span></div>" +
+        (p.note ? '<p class="hint">' + esc(p.note) + "</p>" : "") +
+        '<p class="warn">Datos estimados por una IA, sin consultar internet. Verifica el procesador y la RAM de tu equipo antes de confiar en ellos.</p>' +
+        '<div class="row"><button class="btn primary" type="button" id="c-use">Usar este dispositivo</button></div></div>';
+    }
+  } catch (e) {
+    var code = e && e.code;
+    var msg = code === "not_granted" ? "No diste permiso para usar la IA en esta página."
+      : code === "rate_limited" ? "Se alcanzó el límite de uso. Inténtalo más tarde."
+      : code === "cancelled" ? ""
+      : "No se pudo consultar a la IA. Inténtalo de nuevo o usa el modo Manual.";
+    cOut.innerHTML = msg ? '<p class="warn">' + esc(msg) + "</p>" : "";
+  }
+  cGo.disabled = false;
+});
+cName.addEventListener("keydown", function (ev) { if (ev.key === "Enter") cGo.click(); });
+cOut.addEventListener("click", function (ev) {
+  if (ev.target.id === "c-use" && pending.claude) setProfile(pending.claude, "claude");
+});
+try {
+  if (window.claude && window.claude.use) {
+    window.claude.use("sample").then(function (s) { if (s) sampleFn = s; }).catch(function () {});
+  }
+} catch (e) {}
+
+/* Reproductor de música */
+var TRACKS = [
+  { src: "audio/pista-01.mp3", title: "Battle End", dur: 28 },
+  { src: "audio/pista-02.mp3", title: "Beanbean Castle", dur: 112 },
+  { src: "audio/pista-03.mp3", title: "Boss Battle (Bowser's Minions)", dur: 148 },
+  { src: "audio/pista-04.mp3", title: "Bowletta's Castle", dur: 133 },
+  { src: "audio/pista-05.mp3", title: "Cackletta's Theme", dur: 74 },
+  { src: "audio/pista-06.mp3", title: "Château de Chucklehuck", dur: 154 },
+  { src: "audio/pista-07.mp3", title: "Chucklehuck Woods", dur: 109 },
+  { src: "audio/pista-08.mp3", title: "Come On Again", dur: 112 },
+  { src: "audio/pista-09.mp3", title: "Come On", dur: 165 },
+  { src: "audio/pista-10.mp3", title: "Decisive Battle", dur: 131 },
+  { src: "audio/pista-11.mp3", title: "Element Palace", dur: 96 },
+  { src: "audio/pista-12.mp3", title: "Fawful & Cackletta Battle", dur: 104 },
+  { src: "audio/pista-13.mp3", title: "File Select", dur: 93 },
+  { src: "audio/pista-14.mp3", title: "Hoohoo Mountain", dur: 122 },
+  { src: "audio/pista-15.mp3", title: "Hoohoo Village", dur: 109 },
+  { src: "audio/pista-16.mp3", title: "Item Obtained", dur: 3 },
+  { src: "audio/pista-17.mp3", title: "Koopa Cruiser", dur: 40 },
+  { src: "audio/pista-18.mp3", title: "Koopa Temple (Bowser's Minions)", dur: 100 },
+  { src: "audio/pista-19.mp3", title: "Level Select (Bowser's Minions)", dur: 76 },
+  { src: "audio/pista-20.mp3", title: "Little Fungitown", dur: 85 },
+  { src: "audio/pista-21.mp3", title: "Mario House", dur: 93 },
+  { src: "audio/pista-22.mp3", title: "Minigame 1", dur: 106 },
+  { src: "audio/pista-23.mp3", title: "Minigame 2", dur: 107 },
+  { src: "audio/pista-24.mp3", title: "Minions Battle (Bowser's Minions)", dur: 156 },
+  { src: "audio/pista-25.mp3", title: "Monster Introduction", dur: 60 },
+  { src: "audio/pista-26.mp3", title: "Oho Oasis", dur: 74 },
+  { src: "audio/pista-27.mp3", title: "Oho Ocean", dur: 97 },
+  { src: "audio/pista-28.mp3", title: "Peach Misfortune", dur: 94 },
+  { src: "audio/pista-29.mp3", title: "Peach's Castle Garden", dur: 135 },
+  { src: "audio/pista-30.mp3", title: "Popple & Rookie Battle", dur: 106 },
+  { src: "audio/pista-31.mp3", title: "Prince Peasley's Theme", dur: 142 },
+  { src: "audio/pista-32.mp3", title: "Professor E. Gadd", dur: 154 },
+  { src: "audio/pista-33.mp3", title: "Quest End (Bowser's Minions)", dur: 45 },
+  { src: "audio/pista-34.mp3", title: "Staff Roll", dur: 235 },
+  { src: "audio/pista-35.mp3", title: "Stardust Fields", dur: 90 },
+  { src: "audio/pista-36.mp3", title: "Teehee Valley", dur: 105 },
+  { src: "audio/pista-37.mp3", title: "The Last Cackletta", dur: 147 },
+  { src: "audio/pista-38.mp3", title: "The Name is Fawful", dur: 36 },
+  { src: "audio/pista-39.mp3", title: "Title Theme", dur: 99 },
+  { src: "audio/pista-40.mp3", title: "Underground", dur: 75 },
+  { src: "audio/pista-41.mp3", title: "Woohoo Hooniversity", dur: 64 },
+  { src: "audio/pista-42.mp3", title: "Welcome to the Beanbean Kingdom", dur: 143 }
+];
+/* Mismo orden que la lista de reproducción del dueño; las pistas que no están en ella van al final */
+var ORDEN = [39,13,25,21,28,29,9,35,8,40,15,14,31,42,2,5,6,30,7,41,12,26,11,27,32,36,20,4,10,37,34,22,23,19,24,3,18,1,16,17,33,38];
+TRACKS.sort(function (a, b) { return ORDEN.indexOf(+a.src.match(/(\d+)\.mp3/)[1]) - ORDEN.indexOf(+b.src.match(/(\d+)\.mp3/)[1]); });
+var queue = TRACKS.map(function (t) { return { src: t.src, title: t.title, dur: t.dur, user: false }; });
+var audio = new Audio();
+audio.preload = "none";
+var cur = 0, on = false, loaded = false, fails = 0, qOpen = false, msg = "", msgTimer = null;
+var pToggle = document.getElementById("p-toggle");
+var pTitle = document.getElementById("p-title");
+var pSub = document.getElementById("p-sub");
+var pProg = document.getElementById("p-prog");
+var pVol = document.getElementById("p-vol");
+var pQueue = document.getElementById("p-queue");
+var qBox = document.getElementById("queue");
+var qList = document.getElementById("q-list");
+var qFile = document.getElementById("q-file");
+
+var vol = 0.5;
+try {
+  var sv = localStorage.getItem("emu-vol");
+  if (sv !== null && !isNaN(+sv)) vol = Math.min(1, Math.max(0, +sv));
+} catch (e) {}
+audio.volume = vol;
+pVol.value = String(vol);
+
+var ICON_PLAY = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+var ICON_PAUSE = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>';
+function fmt(s) {
+  if (!isFinite(s) || s <= 0) return "";
+  var m = Math.floor(s / 60), r = Math.round(s % 60);
+  if (r === 60) { m++; r = 0; }
+  return m + ":" + (r < 10 ? "0" : "") + r;
+}
+function flash(text) {
+  msg = text;
+  clearTimeout(msgTimer);
+  msgTimer = setTimeout(function () { msg = ""; renderPlayer(); }, 4000);
+  renderPlayer();
+}
+function renderPlayer() {
+  pToggle.setAttribute("aria-pressed", String(on));
+  pToggle.innerHTML = (on ? ICON_PAUSE : ICON_PLAY) + "<span>" + (on ? "Música activada" : "Música desactivada") + "</span>";
+  pToggle.title = on ? "Pausar la música" : "Activar la música";
+  pTitle.textContent = queue[cur].title;
+  pSub.textContent = msg || ("Pista " + (cur + 1) + " de " + queue.length + " · en bucle");
+  pQueue.textContent = "Cola (" + queue.length + ")";
+  pQueue.setAttribute("aria-expanded", String(qOpen));
+  qBox.hidden = !qOpen;
+  if (qOpen) renderQueue();
+}
+function renderQueue() {
+  document.getElementById("q-title").textContent = "Cola de reproducción (" + queue.length + ")";
+  qList.innerHTML = queue.map(function (t, i) {
+    return '<li><button class="qi" type="button" data-i="' + i + '" aria-current="' + (i === cur) + '">' +
+      '<span class="qn">' + (i + 1) + '</span><span class="qt">' + esc(t.title) + "</span>" +
+      (t.user ? '<span class="mine">Tuya</span>' : "") + '<span class="qd">' + fmt(t.dur) + "</span></button>" +
+      (t.user ? '<button class="qx" type="button" data-rm="' + i + '" aria-label="Quitar ' + esc(t.title) + ' de la cola" title="Quitar">×</button>' : "") + "</li>";
+  }).join("");
+}
+function load(i) {
+  cur = ((i % queue.length) + queue.length) % queue.length;
+  audio.src = queue[cur].src;
+  loaded = true;
+  pProg.style.width = "0";
+  renderPlayer();
+}
+function play() {
+  var p = audio.play();
+  if (p && p.catch) p.catch(function () {
+    on = false;
+    flash("El navegador no dejó reproducir. Toca el botón otra vez.");
+  });
+}
+pToggle.addEventListener("click", function () {
+  on = !on;
+  if (on) { if (!loaded) load(cur); play(); } else audio.pause();
+  renderPlayer();
+});
+document.getElementById("p-next").addEventListener("click", function () { load(cur + 1); if (on) play(); });
+document.getElementById("p-prev").addEventListener("click", function () {
+  if (loaded && audio.currentTime > 3) { audio.currentTime = 0; return; }
+  load(cur - 1);
+  if (on) play();
+});
+pVol.addEventListener("input", function () {
+  vol = +pVol.value;
+  audio.volume = vol;
+  try { localStorage.setItem("emu-vol", String(vol)); } catch (e) {}
+});
+pQueue.addEventListener("click", function () { qOpen = !qOpen; renderPlayer(); });
+document.getElementById("q-close").addEventListener("click", function () { qOpen = false; renderPlayer(); });
+qList.addEventListener("click", function (ev) {
+  var rm = ev.target.closest("[data-rm]");
+  if (rm) {
+    var r = +rm.getAttribute("data-rm");
+    var gone = queue.splice(r, 1)[0];
+    try { URL.revokeObjectURL(gone.src); } catch (e) {}
+    if (r < cur) { cur--; renderPlayer(); }
+    else if (r === cur) { load(cur); if (on) play(); }
+    else renderPlayer();
+    return;
+  }
+  var b = ev.target.closest(".qi");
+  if (b) { on = true; load(+b.getAttribute("data-i")); play(); }
+});
+qFile.addEventListener("change", function () {
+  var files = [].slice.call(qFile.files || []);
+  var added = 0;
+  files.forEach(function (f) {
+    if (f.type.indexOf("audio") === 0 || /\.(opus|ogg|mp3|m4a|aac|wav|flac|webm)$/i.test(f.name)) {
+      var item = { src: URL.createObjectURL(f), title: f.name.replace(/\.[^.]+$/, ""), dur: 0, user: true };
+      queue.push(item);
+      added++;
+      var probe = new Audio();
+      probe.preload = "metadata";
+      probe.onloadedmetadata = function () { item.dur = probe.duration; if (qOpen) renderQueue(); };
+      probe.src = item.src;
+    }
+  });
+  qFile.value = "";
+  flash(added ? added + (added === 1 ? " canción agregada a la cola" : " canciones agregadas a la cola") : "Esos archivos no son de audio");
+});
+audio.addEventListener("ended", function () { load(cur + 1); if (on) play(); });
+audio.addEventListener("playing", function () { fails = 0; });
+audio.addEventListener("timeupdate", function () {
+  if (audio.duration > 0) pProg.style.width = (audio.currentTime / audio.duration * 100) + "%";
+});
+audio.addEventListener("loadedmetadata", function () {
+  if (!queue[cur].dur && isFinite(audio.duration)) { queue[cur].dur = audio.duration; if (qOpen) renderQueue(); }
+});
+audio.addEventListener("error", function () {
+  if (!loaded) return;
+  fails++;
+  if (fails >= queue.length) {
+    on = false;
+    flash("No se pudo reproducir ninguna canción en este navegador.");
+    return;
+  }
+  load(cur + 1);
+  if (on) play();
+});
+
+/* Emuladores que agregan las personas */
+var USER_KEY = "emu-user";
+var OS_LIST = ["Android", "Windows", "Linux", "macOS"];
+var sharedEmus = [], pendingItems = [], dbRef = null, vtSeen = {}, sentChecked = false;
+var me = { owner: false, uid: null, canWrite: null };
+
+function cleanUrl(s) {
+  try {
+    var u = new URL(String(s == null ? "" : s).trim());
+    return u.protocol === "https:" && u.hostname.indexOf(".") > 0 ? u.href : "";
+  } catch (e) { return ""; }
+}
+function fileName(url) {
+  try {
+    var n = new URL(url).pathname.split("/").pop();
+    return decodeURIComponent(n) || "archivo";
+  } catch (e) { return "archivo"; }
+}
+/* Todo lo que llega de la base de datos o del navegador se vuelve a validar aquí. */
+function sanitizeRaw(it, id) {
+  if (!it || typeof it !== "object" || typeof it.name !== "string") return null;
+  var url = cleanUrl(it.url);
+  var rid = String(id || it.id || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60);
+  var name = it.name.trim().slice(0, 60);
+  if (!url || !rid || name.length < 2 || !byId(it.consoleId)) return null;
+  return {
+    id: rid, name: name, consoleId: it.consoleId, os: OS_LIST.indexOf(it.os) >= 0 ? it.os : "Windows", url: url,
+    site: cleanUrl(it.site), v: String(it.v || "").slice(0, 30), notes: String(it.notes || "").slice(0, 200)
+  };
+}
+function makeEmu(r, kind) {
+  return {
+    id: (kind === "approved" ? "a-" : "u-") + r.id, rid: r.id, kind: kind, src: r, name: r.name, consoles: [r.consoleId],
+    v: r.v, light: false, status: "", official: r.site, notes: r.notes,
+    downloads: [{ os: r.os, label: fileName(r.url), size: "", direct: r.url, store: "" }]
+  };
+}
+function loadUser() {
+  var out = [];
+  try {
+    var raw = JSON.parse(localStorage.getItem(USER_KEY) || "[]");
+    if (Array.isArray(raw)) raw.slice(0, 50).forEach(function (u) {
+      var r = sanitizeRaw(u, u && u.id);
+      if (r) out.push(makeEmu(r, u.kind === "sent" || u.kind === "rejected" ? u.kind : "local"));
+    });
+  } catch (e) {}
+  return out;
+}
+function saveUser() {
+  try { localStorage.setItem(USER_KEY, JSON.stringify(userEmus.map(function (e) { return Object.assign({ kind: e.kind }, e.src); }))); } catch (e) {}
+}
+function docFields(r) {
+  return { name: r.name, consoleId: r.consoleId, os: r.os, url: r.url, site: r.site, v: r.v, notes: r.notes, at: Date.now() };
+}
+async function publishApproved(r) { await dbRef.doc("approved/" + r.id).set(docFields(r)); }
+async function sendPending(r) {
+  var ref = dbRef.doc("pending/" + me.uid);
+  var snap = await ref.get();
+  var cur = snap.exists ? (snap.data() || {}) : {};
+  var items = Object.assign({}, cur.items || {});
+  if (Object.keys(items).length >= 10) { var err = new Error("max"); err.code = "max"; throw err; }
+  items[r.id] = docFields(r);
+  await ref.set({ items: items });
+}
+async function removePending(uid, id) {
+  var ref = dbRef.doc("pending/" + uid);
+  var snap = await ref.get();
+  var cur = snap.exists ? (snap.data() || {}) : {};
+  var items = Object.assign({}, cur.items || {});
+  if (!(id in items)) return;
+  delete items[id];
+  await ref.set({ items: items });
+}
+
+/* Formulario */
+var addBox = document.getElementById("addbox");
+var aName = document.getElementById("a-name");
+var aCons = document.getElementById("a-console");
+var aOs = document.getElementById("a-os");
+var aUrl = document.getElementById("a-url");
+var aSite = document.getElementById("a-site");
+var aVer = document.getElementById("a-ver");
+var aNote = document.getElementById("a-note");
+var vtLink = document.getElementById("vt-url");
+var aOk = document.getElementById("add-ok");
+var aSave = document.getElementById("add-save");
+var aMsg = document.getElementById("add-msg");
+var review = document.getElementById("review");
+var reviewList = document.getElementById("review-list");
+var reviewBtn = document.getElementById("review-open");
+var vtClicked = false;
+aCons.innerHTML = CONSOLES.map(function (c) { return '<option value="' + c.id + '">' + esc(c.name) + "</option>"; }).join("");
+
+function addMode() {
+  if (dbRef && me.owner) return "owner";
+  if (dbRef && me.uid && me.canWrite !== false) return "pending";
+  return "local";
+}
+function updateAddMode() {
+  var m = addMode();
+  var tail = " Usa solo enlaces https de la página oficial del proyecto.";
+  document.getElementById("add-mode").textContent =
+    m === "owner" ? "Eres el dueño de esta página: lo que agregues se publica para todos al instante." + tail
+    : m === "pending" ? "Tu envío le llega al dueño de la página. Cuando lo apruebe aparece para todos, y mientras tanto lo ves marcado como «En revisión»." + tail
+    : "No tienes permiso para publicar en la página, así que se guardará solo en este navegador." + tail;
+  aSave.textContent = m === "owner" ? "3. Publicar para todos" : m === "pending" ? "3. Enviar para revisión" : "3. Guardar en mi navegador";
+  reviewBtn.hidden = !(me.owner && dbRef);
+  reviewBtn.textContent = "Envíos pendientes (" + pendingItems.length + ")";
+}
+function updateAdd() {
+  var url = cleanUrl(aUrl.value);
+  var okName = aName.value.trim().length >= 2;
+  vtLink.href = url ? vtUrl(url) : "#";
+  vtLink.setAttribute("aria-disabled", String(!url));
+  aOk.disabled = !(url && vtClicked);
+  if (aOk.disabled) aOk.checked = false;
+  aSave.disabled = !(okName && url && vtClicked && aOk.checked);
+  var msg = "";
+  if (aUrl.value.trim() && !url) msg = "El enlace debe ser una dirección completa que empiece con https://";
+  else if (!okName) msg = "Escribe el nombre del emulador.";
+  else if (!url) msg = "Pega el enlace de descarga.";
+  else if (!vtClicked) msg = "Primero revisa el enlace en VirusTotal.";
+  else if (!aOk.checked) msg = "Confirma el resultado de VirusTotal para poder continuar.";
+  aMsg.textContent = msg;
+}
+function openAdd(consoleId) {
+  addBox.hidden = false;
+  picker.hidden = true;
+  review.hidden = true;
+  if (byId(consoleId)) aCons.value = consoleId;
+  updateAddMode();
+  updateAdd();
+  addBox.scrollIntoView({ block: "nearest" });
+  aName.focus();
+}
+aUrl.addEventListener("input", function () { vtClicked = false; updateAdd(); });
+[aName, aCons, aOs, aSite, aVer, aNote].forEach(function (el) {
+  el.addEventListener("input", updateAdd);
+  el.addEventListener("change", updateAdd);
+});
+aOk.addEventListener("change", updateAdd);
+vtLink.addEventListener("click", function (ev) {
+  if (!cleanUrl(aUrl.value)) { ev.preventDefault(); return; }
+  vtClicked = true;
+  setTimeout(updateAdd, 0);
+});
+aSave.addEventListener("click", async function () {
+  var url = cleanUrl(aUrl.value);
+  if (!url || aName.value.trim().length < 2 || !vtClicked || !aOk.checked) return;
+  var r = sanitizeRaw({ name: aName.value, consoleId: aCons.value, os: aOs.value, url: url, site: aSite.value, v: aVer.value, notes: aNote.value },
+    "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+  if (!r) { aMsg.textContent = "Revisa los datos del formulario."; return; }
+  var mode = addMode();
+  if (mode !== "owner" && userEmus.length >= 50) { aMsg.textContent = "Llegaste al máximo de 50 emuladores propios. Quita alguno primero."; return; }
+  aSave.disabled = true;
+  var kind = "local";
+  try {
+    if (mode === "owner") { await publishApproved(r); kind = "approved"; }
+    else if (mode === "pending") { await sendPending(r); kind = "sent"; }
+  } catch (e) {
+    if (e && e.code === "max") aMsg.textContent = "Ya tienes 10 envíos esperando revisión. Espera a que el dueño los revise.";
+    else if (mode === "owner") aMsg.textContent = "No se pudo publicar. Inténtalo de nuevo.";
+    else { me.canWrite = false; updateAddMode(); aMsg.textContent = "No tienes permiso para enviar a la página. Pulsa el botón otra vez para guardarlo solo en tu navegador."; }
+    aSave.disabled = false;
+    return;
+  }
+  if (kind !== "approved") { userEmus.push(makeEmu(r, kind)); saveUser(); }
+  [aName, aUrl, aSite, aVer, aNote].forEach(function (el) { el.value = ""; });
+  vtClicked = false;
+  aOk.checked = false;
+  addBox.hidden = true;
+  active = r.consoleId;
+  showAll = true;
+  renderAll();
+  try { localStorage.setItem("emu-tab", active); } catch (e) {}
+});
+document.getElementById("add-open").addEventListener("click", function () { openAdd(active); });
+document.getElementById("add-close").addEventListener("click", function () { addBox.hidden = true; });
+
+/* Panel: quitar y agregar */
+panel.addEventListener("click", async function (ev) {
+  if (ev.target.closest("[data-act2]")) { openAdd(active); return; }
+  var r = ev.target.closest("[data-rm-emu]");
+  if (r) {
+    var id = r.getAttribute("data-rm-emu");
+    var e = userEmus.filter(function (x) { return x.id === id; })[0];
+    userEmus = userEmus.filter(function (x) { return x.id !== id; });
+    saveUser();
+    renderAll();
+    if (e && e.kind === "sent" && dbRef && me.uid) { try { await removePending(me.uid, e.rid); } catch (err) {} }
+    return;
+  }
+  var s = ev.target.closest("[data-rm-shared]");
+  if (s && me.owner && dbRef) {
+    try { await dbRef.doc("approved/" + s.getAttribute("data-rm-shared")).delete(); } catch (err) {}
+  }
+});
+
+/* Revisión de envíos (solo el dueño) */
+function pendingKey(it) { return it.uid + "/" + it.id; }
+function renderReview() {
+  updateAddMode();
+  if (!pendingItems.length) { reviewList.innerHTML = '<p class="none">No hay envíos pendientes.</p>'; return; }
+  reviewList.innerHTML = pendingItems.map(function (it) {
+    var key = pendingKey(it);
+    var c = byId(it.consoleId);
+    return '<div class="cand"><h3>' + esc(it.name) + "</h3>" +
+      '<div class="meta"><span class="chip">' + esc(c ? c.name : it.consoleId) + '</span><span class="chip">' + esc(it.os) + "</span>" +
+      (it.v ? '<span class="chip">Versión ' + esc(it.v) + "</span>" : "") + "</div>" +
+      '<p class="hint url">Archivo: ' + esc(it.url) + "</p>" +
+      (it.site ? '<p class="hint url">Sitio: ' + esc(it.site) + "</p>" : "") +
+      (it.notes ? "<p>" + esc(it.notes) + "</p>" : "") +
+      '<div class="row"><a class="btn" data-vt="' + esc(key) + '" href="' + esc(vtUrl(it.url)) + '" target="_blank" rel="noopener noreferrer">1. Revisar en VirusTotal</a>' +
+      '<button class="btn primary" type="button" data-approve="' + esc(key) + '"' + (vtSeen[key] ? "" : " disabled") + ">2. Aprobar y publicar</button>" +
+      '<button class="btn" type="button" data-reject="' + esc(key) + '">Rechazar</button></div>' +
+      '<p class="hint" data-err="' + esc(key) + '"></p></div>';
+  }).join("");
+}
+function findPending(key) {
+  return pendingItems.filter(function (i) { return pendingKey(i) === key; })[0];
+}
+function setReviewMsg(key, text) {
+  var els = reviewList.querySelectorAll("[data-err]");
+  for (var i = 0; i < els.length; i++) if (els[i].getAttribute("data-err") === key) els[i].textContent = text;
+}
+reviewList.addEventListener("click", async function (ev) {
+  var vt = ev.target.closest("[data-vt]");
+  if (vt) {
+    var k = vt.getAttribute("data-vt");
+    vtSeen[k] = true;
+    var bs = reviewList.querySelectorAll("[data-approve]");
+    for (var i = 0; i < bs.length; i++) if (bs[i].getAttribute("data-approve") === k) bs[i].disabled = false;
+    return;
+  }
+  var ap = ev.target.closest("[data-approve]");
+  var rj = ev.target.closest("[data-reject]");
+  var btn = ap || rj;
+  if (!btn || !dbRef || !me.owner) return;
+  var key = btn.getAttribute(ap ? "data-approve" : "data-reject");
+  var it = findPending(key);
+  if (!it) return;
+  btn.disabled = true;
+  try {
+    if (ap) await publishApproved(it);
+    await removePending(it.uid, it.id);
+  } catch (e) {
+    setReviewMsg(key, "No se pudo completar la acción. Inténtalo de nuevo.");
+    btn.disabled = false;
+  }
+});
+reviewBtn.addEventListener("click", function () {
+  review.hidden = false;
+  addBox.hidden = true;
+  picker.hidden = true;
+  renderReview();
+  review.scrollIntoView({ block: "nearest" });
+});
+document.getElementById("review-close").addEventListener("click", function () { review.hidden = true; });
+
+/* Base de datos compartida */
+function reconcileSent() {
+  var changed = false;
+  userEmus = userEmus.filter(function (e) {
+    if ((e.kind === "sent" || e.kind === "rejected") && sharedEmus.some(function (s) { return s.rid === e.rid; })) { changed = true; return false; }
+    return true;
+  });
+  if (changed) saveUser();
+}
+async function checkSent() {
+  if (sentChecked || !dbRef || !me.uid || me.owner) return;
+  sentChecked = true;
+  var sent = userEmus.filter(function (e) { return e.kind === "sent"; });
+  if (!sent.length) return;
+  try {
+    var snap = await dbRef.doc("pending/" + me.uid).get();
+    var items = (snap.exists && (snap.data() || {}).items) || {};
+    var changed = false;
+    sent.forEach(function (e) {
+      if (!items[e.rid] && !sharedEmus.some(function (s) { return s.rid === e.rid; })) { e.kind = "rejected"; changed = true; }
+    });
+    if (changed) { saveUser(); renderAll(); }
+  } catch (e) {}
+}
+async function startShared() {
+  var user = null, db = null;
+  try {
+    if (window.claude && window.claude.use) {
+      user = await window.claude.use("user");
+      db = await window.claude.use("db");
+    }
+  } catch (e) {}
+  if (user) {
+    try { me.owner = !!(await user.isOwner()); } catch (e) {}
+    try { me.uid = await user.id(); } catch (e) {}
+    try { me.canWrite = await user.can("data.write"); } catch (e) {}
+  }
+  dbRef = db || null;
+  updateAddMode();
+  if (!dbRef) return;
+  try {
+    dbRef.collection("approved").onSnapshot(function (snap) {
+      sharedEmus = [];
+      snap.docs.forEach(function (d) {
+        var r = sanitizeRaw(d.data(), d.id);
+        if (r) sharedEmus.push(makeEmu(r, "approved"));
+      });
+      reconcileSent();
+      renderAll();
+      checkSent();
+    }, function () {});
+    if (me.owner) {
+      dbRef.collection("pending").onSnapshot(function (snap) {
+        pendingItems = [];
+        snap.docs.forEach(function (d) {
+          var items = (d.data() || {}).items;
+          if (!items || typeof items !== "object") return;
+          Object.keys(items).slice(0, 50).forEach(function (k) {
+            var r = sanitizeRaw(items[k], k);
+            if (r) { r.uid = d.id; pendingItems.push(r); }
+          });
+        });
+        renderReview();
+      }, function () {});
+    }
+  } catch (e) {}
+}
+
+/* Tema: auto, claro, oscuro */
+var themes = ["auto", "light", "dark"];
+var labels = { auto: "Tema: auto", light: "Tema: claro", dark: "Tema: oscuro" };
+var themeIdx = 0;
+themeBtn.addEventListener("click", function () {
+  themeIdx = (themeIdx + 1) % 3;
+  var t = themes[themeIdx];
+  if (t === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t);
+  themeBtn.textContent = labels[t];
+});
+
+/* Inicio */
+profile = loadProfile();
+userEmus = loadUser();
+var start = (location.hash || "").replace("#", "");
+if (!byId(start)) {
+  start = "";
+  try { start = localStorage.getItem("emu-tab") || ""; } catch (e) {}
+}
+if (byId(start)) active = start;
+renderAll();
+renderPlayer();
+startShared();
+</script>
+
+</body></html>
